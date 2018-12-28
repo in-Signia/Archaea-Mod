@@ -1,9 +1,0 @@
-author = 
-version = 0.1.7.05
-displayName = Archaea Mod
-homepage = 
-hideCode = false
-hideResources = false
-includeSource = false
-buildIgnore = *.csproj, *.user, obj\*, bin\*, .vs\*, *.ini
-includePDB = true
