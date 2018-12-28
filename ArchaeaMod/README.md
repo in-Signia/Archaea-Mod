@@ -1,2 +1,2 @@
 # Note
-If doable, adding sprites with the intended item names would be helpful.
+Uploading sprites with intended item names for future updating, if possible, might be useful.
