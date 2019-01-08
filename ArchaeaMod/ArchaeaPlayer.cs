@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework.Input;
 using Terraria;
 using Terraria.Map;
 using Terraria.ModLoader;
+using Terraria.UI.Chat;
 
 namespace ArchaeaMod
 {
@@ -32,9 +33,17 @@ namespace ArchaeaMod
                 }
             }
         }
+        public static bool LeftClick()
+        {
+            return Main.mouseLeftRelease && Main.mouseLeft;
+        }
         public static bool KeyPress(Keys key)
         {
             return Main.oldKeyState.IsKeyUp(key) && Main.keyState.IsKeyDown(key);
+        }
+        public static bool KeyHold(Keys key)
+        {
+            return Main.keyState.IsKeyDown(key);
         }
     }
 }
