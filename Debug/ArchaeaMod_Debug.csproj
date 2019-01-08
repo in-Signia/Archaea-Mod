@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BAE024E3-AFD2-4D69-8EF9-D9FA33381895}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ArchaeaMod_Debug</RootNamespace>
+    <AssemblyName>ArchaeaMod_Debug</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\..\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\..\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Game\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Game.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\..\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Graphics\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Graphics.dll</HintPath>
+    </Reference>
+    <Reference Include="Terraria">
+      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Terraria\Terraria.exe</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ArchaeaMod_Debug.cs" />
+    <Compile Include="ArchaeaPlayer.cs" />
+    <Compile Include="ArchaeaWorld.cs" />
+    <Compile Include="ArchaeaWorld_prev.cs" />
+    <Compile Include="Debug.cs" />
+    <Compile Include="NPCs\ArchaeaNPC.cs" />
+    <Compile Include="NPCs\Bosses\Magnoliac_body.cs" />
+    <Compile Include="NPCs\Bosses\Magnoliac_head.cs" />
+    <Compile Include="NPCs\Bosses\Magnoliac_tail.cs" />
+    <Compile Include="NPCs\Caster.cs" />
+    <Compile Include="NPCs\Fanatic.cs" />
+    <Compile Include="NPCs\Digger.cs" />
+    <Compile Include="NPCs\Hatchling_tail.cs" />
+    <Compile Include="NPCs\Hatchling_body.cs" />
+    <Compile Include="NPCs\Hatchling_head.cs" />
+    <Compile Include="NPCs\Mimic.cs" />
+    <Compile Include="NPCs\Sky_2.cs" />
+    <Compile Include="NPCs\Sky_ground.cs" />
+    <Compile Include="NPCs\Sky_air.cs" />
+    <Compile Include="NPCs\Sky_1.cs" />
+    <Compile Include="NPCs\Slime_Itchy.cs" />
+    <Compile Include="NPCs\Slime_Mercurial.cs" />
+    <Compile Include="NPCs\Slime.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="NPCs\Bosses\Magnoliac_tail.png" />
+    <Content Include="NPCs\Bosses\Magnoliac_head.png" />
+    <Content Include="NPCs\Bosses\Magnoliac_body.png" />
+    <Content Include="NPCs\Fanatic.png" />
+    <Content Include="NPCs\Hatchling_body.png" />
+    <Content Include="NPCs\Hatchling_head.png" />
+    <Content Include="NPCs\Hatchling_tail.png" />
+    <Content Include="NPCs\Mimic.png" />
+    <Content Include="NPCs\Sky_2.png" />
+    <Content Include="NPCs\Sky_1.png" />
+    <Content Include="NPCs\Slime_Itchy.png" />
+    <Content Include="NPCs\Slime_Mercurial.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
