@@ -50,14 +50,10 @@ namespace ArchaeaMod_Debug.NPCs
                 else return target();
             }
         }
-        public override void PostAI()
+        public override void Digging()
         {
-            if (npc.Distance(newTarget.position) > maxDistance)
-            {
-                ai = Idle;
-                if (npc.timeLeft-- <= 0)
-                    npc.active = false;
-            }
+            if (npc.Distance(target().position) > range / 3)
+                ai = ChasePlayer;
         }
     }
 }

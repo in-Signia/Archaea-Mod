@@ -21,7 +21,7 @@ namespace ArchaeaMod_Debug
             basic[0] = s1;
             basic[1] = s2;
         }
-        public static void ModNPCInfo(object[] o = null)
+        public static void ModInfo(object[] o = null)
         {
             if (o != null)
                 for (int k = 0; k < o.Length; k++)

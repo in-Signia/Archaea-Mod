@@ -51,12 +51,16 @@ namespace ArchaeaMod_Debug.NPCs
         public override bool PreAI()
         {
             npc.active = part.type == mod.NPCType<Hatchling_head>() ? part.active : lead.active;
-            Digger.DiggerPartsAI(npc, part, ref acc);
+            Digger.DiggerPartsAI(npc, part, mod.GetNPC<Hatchling_head>().followSpeed, ref acc);
             return true;
         }
         public override bool CheckActive()
         {
             return false;
+        }
+        public override void HitEffect(int hitDirection, double damage)
+        {
+            part.StrikeNPC((int)damage, 0f, -1);
         }
     }
 }

@@ -11,6 +11,10 @@ namespace ArchaeaMod_Debug
 {
     public class ArchaeaMod_Debug : Mod
     {
+        public static Mod getMod
+        {
+            get { return ModLoader.GetMod("ArchaeaMod_Debug"); }
+        }
         public static bool prompt;
         public void SetModInfo(out string name, ref ModProperties properties)
         {

@@ -47,6 +47,30 @@ namespace ArchaeaMod_Debug
         {
             get { return getMod.NPCType<NPCs.Sky_2>(); }
         }
+        public static int MagnoliacHead
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Magnoliac_head>(); }
+        }
+        public static int MagnoliacBody
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Magnoliac_body>(); }
+        }
+        public static int MagnoliacTail
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Magnoliac_tail>(); }
+        }
+        public static int Monolith
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Monolith>(); }
+        }
+        public static int MonolithOrb
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Monolith_orb>(); }
+        }
+        public static int SkyBoss
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Sky_boss>(); }
+        }
     }
     public class SpawnNPC
     {
@@ -286,7 +310,26 @@ namespace ArchaeaMod_Debug.NPCs
             newLife = life;
             return false;
         }
-        
+        public static void RotateIncrement(bool direction, ref float from, float to, float speed, out float result)
+        {
+            if (!direction)
+            {
+                if (from >= to * -1)
+                    from -= speed;
+                if (from <= to * -1)
+                    from += speed;
+            }
+            else
+            {
+                if (from >= to)
+                    from -= speed;
+                if (from <= to)
+                    from += speed;
+            }
+            result = from;
+        }
+
+
         public static void PositionToVel(NPC npc, Vector2 change, float speedX, float speedY, bool clamp = false, float min = -2.5f, float max = 2.5f, bool wobble = false, double degree = 0f)
         {
             float cos = wobble ? (float)(0.05f * Math.Cos(degree)) : 0f;

@@ -69,7 +69,23 @@ namespace ArchaeaMod_Debug
                             "Mercury Slime: " + ModNPCID.MercurialSlime,
                             "Mango Slime: " + ModNPCID.ItchySlime,
                             "Observer: " + ModNPCID.Observer,
-                            "Marauder: " + ModNPCID.Marauder
+                            "Marauder: " + ModNPCID.Marauder,
+                            "Magnoliac [boss]: " + ModNPCID.MagnoliacHead,
+                            "Monolith [boss]: " + ModNPCID.Monolith,
+                            "Sky [boss]" + ModNPCID.SkyBoss
+                        };
+                        Main.chatText = string.Empty;
+                        Main.chatRelease = true;
+                        foreach (string s in info)
+                            Main.NewText(s);
+                        return;
+                    }
+                    if (Main.chatText.Contains("item"))
+                    {
+                        string[] info = new string[]
+                        {
+                            "Deflector: " + ModItemID.Deflector,
+                            "Sabre: " + ModItemID.Sabre
                         };
                         Main.chatText = string.Empty;
                         Main.chatRelease = true;
@@ -85,15 +101,26 @@ namespace ArchaeaMod_Debug
                 {
                     if (Main.chatText.StartsWith("/npc"))
                     {
-                        string text = Main.chatText;
+                        string text = Main.chatText.Substring(Main.chatText.IndexOf(' ') + 1);
+                        int count = 1;
+                        if (text.Contains(" "))
+                            int.TryParse(text.Substring(text.LastIndexOf(' ') + 1), out count);
                         int type;
-                        int.TryParse(text.Substring(text.IndexOf(' ') + 1), out type);
-                        NPC previous = Main.npc[previousNPC];
-                        previous.StrikeNPC(previous.lifeMax, 0f, 1, true);
-                        previousNPC = NPC.NewNPC((int)player.position.X - 20, (int)player.position.Y, type);
+                        int.TryParse(text.Substring(0, 3), out type);
+                        for (int i = 0; i < count; i++)
+                            NPC.NewNPC((int)player.position.X - 20 * count, (int)player.position.Y, type);
+                        if (Main.chatText.Contains("strike"))
+                            foreach (NPC npc in Main.npc)
+                                if (npc.active && !npc.friendly && npc.life > 0)
+                                    npc.StrikeNPC(npc.lifeMax, 0f, 1, true);
                     }
                     if (Main.chatText.StartsWith("/item"))
                     {
+                        if (Main.chatText.Contains("name"))
+                        {
+                            Main.NewText(mod.ItemType(Main.chatText.Substring(Main.chatText.LastIndexOf(' ') + 1)));
+                            return;
+                        }
                         string text = Main.chatText;
                         int type;
                         int.TryParse(text.Substring(text.IndexOf(' ') + 1), out type);
