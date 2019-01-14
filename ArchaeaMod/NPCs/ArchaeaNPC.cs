@@ -18,6 +18,10 @@ namespace ArchaeaMod
         {
             get { return ModLoader.GetMod("ArchaeaMod_Debug"); }
         }
+        public static int ItchySlime
+        {
+            get { return getMod.NPCType<NPCs.Slime_Itchy>(); }
+        }
         public static int MercurialSlime
         {
             get { return getMod.NPCType<NPCs.Slime_Mercurial>(); }
@@ -28,11 +32,35 @@ namespace ArchaeaMod
         }
         public static int Fanatic
         {
-            get { return getMod.NPCType<NPCs.Caster>(); }
+            get { return getMod.NPCType<NPCs.Fanatic>(); }
         }
         public static int Hatchling
         {
             get { return getMod.NPCType<NPCs.Hatchling_head>(); }
+        }
+        public static int Observer
+        {
+            get { return getMod.NPCType<NPCs.Sky_1>(); }
+        }
+        public static int Marauder
+        {
+            get { return getMod.NPCType<NPCs.Sky_2>(); }
+        }
+        public static int MagnoliacHead
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Magnoliac_head>(); }
+        }
+        public static int MagnoliacBody
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Magnoliac_body>(); }
+        }
+        public static int MagnoliacTail
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Magnoliac_tail>(); }
+        }
+        public static int SkyBoss
+        {
+            get { return getMod.NPCType<NPCs.Bosses.Sky_boss>(); }
         }
     }
 }
@@ -291,6 +319,24 @@ namespace ArchaeaMod.NPCs
                 npc.velocity.X = min;
             if (npc.velocity.X > max)
                 npc.velocity.X = max;
+        }
+        public static void RotateIncrement(bool direction, ref float from, float to, float speed, out float result)
+        {
+            if (!direction)
+            {
+                if (from >= to * -1)
+                    from -= speed;
+                if (from <= to * -1)
+                    from += speed;
+            }
+            else
+            {
+                if (from >= to)
+                    from -= speed;
+                if (from <= to)
+                    from += speed;
+            }
+            result = from;
         }
 
         protected static bool SolidGround(Tile[] tiles)

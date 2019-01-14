@@ -44,9 +44,14 @@ namespace ArchaeaMod.NPCs
         public virtual bool moveThroughAir
         {
             get { return true; }
+            set { }
         }
         public int bodyType;
         public int tailType;
+        public virtual int totalParts
+        {
+            get { return 8; }
+        }
         private int[] body;
         private float acc = 1f;
         private float accelerate;
@@ -57,7 +62,7 @@ namespace ArchaeaMod.NPCs
         }
         public float followSpeed
         {
-            get { return leadSpeed * 1.34f; }
+            get { return leadSpeed * 2f; }
         }
         public float turnSpeed
         {
@@ -94,20 +99,7 @@ namespace ArchaeaMod.NPCs
         {
             Initialize();
             direction = follow.X > npc.Center.X;
-            if (!direction)
-            {
-                if (npc.rotation >= rotateTo * -1)
-                    npc.rotation -= turnSpeed;
-                if (npc.rotation <= rotateTo * -1)
-                    npc.rotation += turnSpeed;
-            }
-            else
-            {
-                if (npc.rotation >= rotateTo)
-                    npc.rotation -= turnSpeed;
-                if (npc.rotation <= rotateTo)
-                    npc.rotation += turnSpeed;
-            }
+            ArchaeaNPC.RotateIncrement(direction, ref npc.rotation, rotateTo, turnSpeed, out npc.rotation);
             if (PreMovement() && Vector2.Distance(follow, npc.Center) > npc.width * 1.2f)
             {
                 if (acc > 0.90f)
@@ -281,6 +273,14 @@ namespace ArchaeaMod.NPCs
             int j = (int)npc.Center.Y / 16;
             return i < Main.maxTilesX - 30 && i > 500 / 16 && j < Main.maxTilesY - 30 && j > 500 / 16;
         }
+        protected static void Clamp(float input, float min, float max, out float result)
+        {
+            if (input < min)
+                input = min;
+            if (input > max)
+                input = max;
+            result = input;
+        }
         public virtual bool PreMovement()
         {
             return true;
@@ -297,18 +297,17 @@ namespace ArchaeaMod.NPCs
         {
 
         }
-        public static void DiggerPartsAI(NPC npc, NPC part, ref float acc)
+        public static void DiggerPartsAI(NPC npc, NPC part, float speed, ref float acc)
         {
+            Vector2 connect = ArchaeaNPC.AngleBased(new Vector2(part.position.X, part.position.Y + part.height / 2), part.rotation, part.width);
             npc.rotation = ArchaeaNPC.AngleTo(npc.Center, part.Center);
             if (Vector2.Distance(part.Center, npc.Center) > npc.width * 1.2f)
             {
-                if (acc > 0.80f)
-                {
-                    if (!npc.Hitbox.Contains(part.position.ToPoint()))
-                        acc -= 0.01f;
-                    else acc += 0.05f;
-                }
-                npc.Center = npc.Center + ArchaeaNPC.AngleToSpeed(npc.rotation, digger.followSpeed / acc);
+                if (!npc.Hitbox.Contains(connect.ToPoint()))
+                    acc = 0.60f;
+                else acc += 0.01f;
+                Clamp(acc, 0.6f, 1f, out acc);
+                npc.Center += ArchaeaNPC.AngleToSpeed(npc.rotation, speed * acc);
             }
         }
     }

@@ -23,9 +23,10 @@ namespace ArchaeaMod.NPCs
 
         public bool Hurt()
         {
-            return npc.life < npc.lifeMax && npc.life > 0 && oldLife != npc.life;
+            bool hurt = npc.life < npc.lifeMax && npc.life > 0 && oldLife != npc.life;
+            oldLife = npc.life;
+            return hurt;
         }
-        private bool findClosest;
         private bool fade;
         private bool rangeOut;
         public bool proximity = true;
@@ -40,8 +41,12 @@ namespace ArchaeaMod.NPCs
             set { npc.ai[0] = value; }
         }
         private int count;
-        public float range;
+        private float range;
         public virtual Rectangle Range
+        {
+            get { return defaultRange; }
+        }
+        public Rectangle defaultRange
         {
             get { return new Rectangle((int)npc.position.X - 200, (int)npc.position.Y - 150, 400, 300); }
         }
@@ -52,7 +57,7 @@ namespace ArchaeaMod.NPCs
         internal Pattern pattern = Pattern.JustSpawned;
         public Player target()
         {
-            Player player = ArchaeaNPC.FindClosest(npc, findClosest);
+            Player player = ArchaeaNPC.FindClosest(npc);
             if (player != null)
             {
                 npc.target = player.whoAmI;
@@ -78,6 +83,10 @@ namespace ArchaeaMod.NPCs
                 case Pattern.JustSpawned:
                     if (JustSpawned())
                     {
+                        ai = 0;
+                        attackRate = 180;
+                        moveRate = 150;
+                        range = 300f;
                         oldLife = npc.life;
                         if (aggroChance(80))
                             pattern = Pattern.Attack;
@@ -88,16 +97,13 @@ namespace ArchaeaMod.NPCs
                     pattern = Pattern.Idle;
                     DefaultAI();
                     if (Hurt())
-                    {
-                        findClosest = true;
-                        goto case Pattern.Attack;
-                    }
+                        goto case Pattern.Active;
                     if (npc.Distance(target().position) < range * 0.6f)
                         goto case Pattern.Active;
                     return true;
                 case Pattern.Active:
                     pattern = Pattern.Active;
-                    if (Hurt() || aggroChance(9000) || count > 6)
+                    if (aggroChance(9000) || count > 6)
                     {
                         count = 0;
                         goto case Pattern.Attack;
@@ -147,14 +153,6 @@ namespace ArchaeaMod.NPCs
             if (fade)
                 rangeOut = true;
         }
-        public virtual bool JustSpawned()
-        {
-            ai = 0;
-            attackRate = 180;
-            moveRate = 150;
-            range = 300f;
-            return true;
-        }
         protected bool DefaultAI()
         {
             reData = true;
@@ -171,11 +169,13 @@ namespace ArchaeaMod.NPCs
                     return false;
                 case 1:
                     ai = 1;
+                    move = ArchaeaNPC.FindEmptyRegion(target(), targetRange);
                     if (npc.alpha < 225)
                         npc.alpha += 25;
                     else
                     {
-                        npc.position = move;
+                        if (move != Vector2.Zero)
+                            npc.position = move;
                         goto case 2;
                     }
                     return true;
@@ -189,9 +189,9 @@ namespace ArchaeaMod.NPCs
             return false;
         }
         public bool reData = true;
-        public int ai;
-        public int type = -1;
-        public int index;
+        private int ai;
+        private int type = -1;
+        private int index;
         private int rand = 0;
         private int moveRate;
         private int moveCount;
@@ -212,6 +212,7 @@ namespace ArchaeaMod.NPCs
                 idle = npc.position;
                 upper = new Vector2(oldX, upperPoint);
                 type = -1;
+                points = new Vector2[5];
                 reData = false;
             }
             switch (type)
@@ -238,16 +239,17 @@ namespace ArchaeaMod.NPCs
                     else
                     {
                         index = 0;
-                        type = 1;
                         goto case 1;
                     }
                     break;
                 case 1:
+                    type = 1;
                     if (index++ > moveRate)
                     {
                         rand = Main.rand.Next(points.Length);
                         index = 0;
                         moveCount++;
+                        count++;
                     }
                     newMove = points[rand];
                     ArchaeaNPC.PositionToVel(npc, newMove, 0.6f, 0.4f, true, -5f, 5f);
@@ -272,6 +274,10 @@ namespace ArchaeaMod.NPCs
         private int attacks;
         private int attackRate;
         private int time;
+        public virtual int totalAttacks
+        {
+            get { return 4; }
+        }
         public Vector2 move;
         protected void AttackPattern()
         {
@@ -291,13 +297,13 @@ namespace ArchaeaMod.NPCs
                 case -1:
                     goto case Teleport;
                 case Attack:
-                    if (time++ % attackRate == 0 && time != 0)
+                    if (BeginAttack() && time++ % attackRate == 0 && time != 0)
                     {
-                        BeginAttack();
                         attacks++;
-                        if (attacks > 4)
+                        if (attacks > totalAttacks)
                         {
                             pattern = Pattern.Active;
+                            reData = true;
                             preAttack = true;
                             break;
                         }
@@ -311,12 +317,14 @@ namespace ArchaeaMod.NPCs
                     break;
                 case FadeOut:
                     attack = FadeOut;
+                    move = ArchaeaNPC.FindEmptyRegion(target(), targetRange);
                     if (npc.alpha < 200)
                         npc.alpha += 5;
-                    else
+                    else if (BeginTeleport())
                     {
                         if (npc.Distance(target().position) < 800f)
-                            npc.position = move;
+                            if (move != Vector2.Zero)
+                                npc.position = move;
                         goto case FadeIn;
                     }
                     break;
@@ -329,6 +337,10 @@ namespace ArchaeaMod.NPCs
             }
         }
 
+        public virtual bool JustSpawned()
+        {
+            return true;
+        }
         public virtual bool PreDefaultMove()
         {
             return true;
@@ -341,8 +353,9 @@ namespace ArchaeaMod.NPCs
         {
             return true;
         }
-        public virtual void BeginAttack()
+        public virtual bool BeginAttack()
         {
+            return true;
         }
         public virtual bool PreFadeOut()
         {

@@ -1,5 +1,5 @@
 author = 
-version = 0.1.9.05
+version = 0.1.9.30
 displayName = Archaea Mod
 homepage = 
 hideCode = true
