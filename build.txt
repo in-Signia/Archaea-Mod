@@ -1,8 +1,0 @@
-author = 
-version = 0.1.6.25
-homepage = 
-hideCode = true
-hideResources = true
-includeSource = false
-buildIgnore = *.csproj, *.user, obj\*, bin\*, .vs\*, *.ini
-includePDB = false
