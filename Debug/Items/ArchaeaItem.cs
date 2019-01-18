@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -178,7 +179,8 @@ namespace ArchaeaMod_Debug.Items
             None = -1,
             Default = 0,
             Sword = 1,
-            Active = 2;
+            Active = 2,
+            Gravity = 3;
         private float rotate;
         private float alpha;
         private Dust dust;
