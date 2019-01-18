@@ -37,14 +37,14 @@ namespace ArchaeaMod_Debug.NPCs
         {
             elapse = 120;
             dustType = 6;
-            var dusts = ArchaeaNPC.DustSpread(npc.Center, dustType, 10, 3f);
+            var dusts = ArchaeaNPC.DustSpread(npc.Center, 1, 1, dustType, 10, 3f);
             foreach (Dust d in dusts)
                 d.noGravity = true;
             return true;
         }
         public override void Teleport()
         {
-            var dusts = ArchaeaNPC.DustSpread(npc.Center, dustType, 10, 3f);
+            var dusts = ArchaeaNPC.DustSpread(npc.Center, 1, 1, dustType, 10, 3f);
             foreach (Dust d in dusts)
                 d.noGravity = true;
         }

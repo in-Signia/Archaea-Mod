@@ -290,13 +290,13 @@ namespace ArchaeaMod_Debug.NPCs
         {
             return (float)Math.Atan2(to.Y - from.Y, to.X - from.X);
         }
-        public static Dust[] DustSpread(Vector2 v, int dustType = 6, int total = 10, float scale = 1f)
+        public static Dust[] DustSpread(Vector2 v, int width = 1, int height = 1, int dustType = 6, int total = 10, float scale = 1f)
         {
             Dust[] dusts = new Dust[total];
             for (int k = 0; k < total; k++)
             {
                 Vector2 speed = ArchaeaNPC.AngleToSpeed(ArchaeaNPC.RandAngle(), 8f);
-                dusts[k] = Dust.NewDustDirect(v + speed, 1, 1, dustType, speed.X, speed.Y, 0, default(Color), 2f);
+                dusts[k] = Dust.NewDustDirect(v + speed, width, height, dustType, speed.X, speed.Y, 0, default(Color), 2f);
             }
             return dusts;
         }
@@ -317,7 +317,7 @@ namespace ArchaeaMod_Debug.NPCs
                 if (from >= to * -1)
                     from -= speed;
                 if (from <= to * -1)
-                    from += speed;
+                    from -= speed;
             }
             else
             {
@@ -347,14 +347,15 @@ namespace ArchaeaMod_Debug.NPCs
         }
         public static void VelocityClamp(NPC npc, float min, float max)
         {
-            if (npc.velocity.X < min)
-                npc.velocity.X = min;
-            if (npc.velocity.X > max)
-                npc.velocity.X = max;
-            if (npc.velocity.Y < min)
-                npc.velocity.Y = min;
-            if (npc.velocity.Y > max)
-                npc.velocity.Y = max;
+            Vector2 _min = new Vector2(min, min);
+            Vector2 _max = new Vector2(max, max);
+            Vector2.Clamp(ref npc.velocity, ref _min, ref _max, out npc.velocity);
+        }
+        public static void VelocityClamp(Projectile proj, float min, float max)
+        {
+            Vector2 _min = new Vector2(min, min);
+            Vector2 _max = new Vector2(max, max);
+            Vector2.Clamp(ref proj.velocity, ref _min, ref _max, out proj.velocity);
         }
         public static void VelClampX(NPC npc, float min, float max)
         {

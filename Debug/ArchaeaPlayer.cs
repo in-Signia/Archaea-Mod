@@ -124,7 +124,7 @@ namespace ArchaeaMod_Debug
                         string text = Main.chatText;
                         int type;
                         int.TryParse(text.Substring(text.IndexOf(' ') + 1), out type);
-                        Item.NewItem(player.position, type);
+                        Item.NewItem(player.position, type, 10);
                     }
                     if (Main.chatText.StartsWith("/spawn"))
                         player.Teleport(new Vector2(Main.spawnTileX * 16, Main.spawnTileY * 16));
@@ -175,6 +175,15 @@ namespace ArchaeaMod_Debug
             //  SpriteBatch sb = Main.spriteBatch;
             //  sb.DrawString(Main.fontMouseText, text, new Vector2(Main.spawnTileX * 16 - text.Length * 2.5f, Main.spawnTileY * 16) - Main.screenPosition, Color.White);
             }
+        }
+    }
+
+    public class Draw
+    {
+        public const float radian = 0.017f;
+        public float radians(float distance)
+        {
+            return radian * (45f / distance);
         }
     }
 }
