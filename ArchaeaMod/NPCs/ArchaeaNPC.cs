@@ -304,14 +304,15 @@ namespace ArchaeaMod.NPCs
         }
         public static void VelocityClamp(NPC npc, float min, float max)
         {
-            if (npc.velocity.X < min)
-                npc.velocity.X = min;
-            if (npc.velocity.X > max)
-                npc.velocity.X = max;
-            if (npc.velocity.Y < min)
-                npc.velocity.Y = min;
-            if (npc.velocity.Y > max)
-                npc.velocity.Y = max;
+            Vector2 _min = new Vector2(min, min);
+            Vector2 _max = new Vector2(max, max);
+            Vector2.Clamp(ref npc.velocity, ref _min, ref _max, out npc.velocity);
+        }
+        public static void VelocityClamp(Projectile proj, float min, float max)
+        {
+            Vector2 _min = new Vector2(min, min);
+            Vector2 _max = new Vector2(max, max);
+            Vector2.Clamp(ref proj.velocity, ref _min, ref _max, out proj.velocity);
         }
         public static void VelClampX(NPC npc, float min, float max)
         {
