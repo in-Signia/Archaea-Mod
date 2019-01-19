@@ -15,29 +15,30 @@ using ArchaeaMod_Debug.Projectiles;
 
 namespace ArchaeaMod_Debug.Items
 {
-    public class r_Javelin : ModItem
+    public class r_Tomahawk : ModItem
     {
         public override void SetStaticDefaults()
         {
-            DisplayName.SetDefault("Rust Javelin");
-            Tooltip.SetDefault("Rusty but still useful");
+            DisplayName.SetDefault("Rusty Tomahawk");
+            Tooltip.SetDefault("Was once shiny");
         }
         public override void SetDefaults()
         {
             item.width = 48;
             item.height = 48;
-            item.damage = 0;
-            item.knockBack = 0f;
+            item.damage = 10;
+            item.knockBack = 2f;
             item.value = 100;
-            item.rare = 1;
+            item.rare = 2;
+            item.maxStack = 250;
             item.useTime = 30;
             item.useAnimation = 20;
             item.useStyle = ItemUseStyleID.SwingThrow;
-            item.maxStack = 250;
-            item.consumable = true;
-            item.shoot = mod.ProjectileType<Javelin>();
-            item.shootSpeed = 6f;
+            item.shoot = mod.ProjectileType<Tomahawk>();
+            item.shootSpeed = 7f;
             item.thrown = true;
+            item.consumable = true;
+            item.noUseGraphic = true;
         }
     }
 }

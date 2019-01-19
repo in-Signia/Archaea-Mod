@@ -13,7 +13,6 @@ using Terraria.ID;
 using Terraria.Map;
 using Terraria.ModLoader;
 
-
 namespace ArchaeaMod_Debug
 {
     public class ArchaeaPlayer : ModPlayer

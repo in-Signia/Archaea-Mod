@@ -10,6 +10,8 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
+using ArchaeaMod_Debug.Projectiles;
+
 namespace ArchaeaMod_Debug.Items.Alternate
 {
     public class Staff : ModItem

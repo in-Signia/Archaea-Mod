@@ -11,6 +11,8 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
+using ArchaeaMod_Debug.Projectiles;
+
 namespace ArchaeaMod_Debug.Items
 {
     public class c_Sword : ModItem
@@ -50,7 +52,7 @@ namespace ArchaeaMod_Debug.Items
             if (index < ground.Length)
             {
                 if (ArchaeaItem.Elapsed(5))
-                    Projectile.NewProjectileDirect(ground[index++], Vector2.Zero, mod.ProjectileType<Items.Mercury>(), item.damage, item.knockBack, player.whoAmI, Mercury.Ground);
+                    Projectile.NewProjectileDirect(ground[index++], Vector2.Zero, mod.ProjectileType<Mercury>(), item.damage, item.knockBack, player.whoAmI, Mercury.Ground);
             }
         }
 
