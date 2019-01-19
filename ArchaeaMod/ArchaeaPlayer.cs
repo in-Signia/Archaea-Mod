@@ -46,4 +46,13 @@ namespace ArchaeaMod
             return Main.keyState.IsKeyDown(key);
         }
     }
+
+    public class Draw
+    {
+        public const float radian = 0.017f;
+        public float radians(float distance)
+        {
+            return radian * (45f / distance);
+        }
+    }
 }

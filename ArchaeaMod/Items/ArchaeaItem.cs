@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,6 +12,24 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
+using ArchaeaMod.Buffs;
+using ArchaeaMod.Items.Alternate;
+using ArchaeaMod.Projectiles;
+
+namespace ArchaeaMod
+{
+    public class ModItemID
+    {
+        public static int Deflector
+        {
+            get { return ArchaeaMod.getMod.ItemType<Deflector>(); }
+        }
+        public static int Sabre
+        {
+            get { return ArchaeaMod.getMod.ItemType<Sabre>(); }
+        }
+    }
+}
 namespace ArchaeaMod.Items
 {
     public class ArchaeaItem
@@ -22,6 +41,11 @@ namespace ArchaeaMod.Items
             float angle = NPCs.ArchaeaNPC.AngleTo(player.Center, Main.MouseWorld);
             player.itemRotation = angle + (player.direction == -1 ? PI : 0);
             player.itemLocation.X = NPCs.ArchaeaNPC.AngleBased(player.position, angle, player.width / 4).X - player.width / 2 - 4;
+        }
+        public static float StartThrowX(Player player)
+        {
+            float angle = NPCs.ArchaeaNPC.AngleTo(player.Center, Main.MouseWorld);
+            return NPCs.ArchaeaNPC.AngleBased(player.position, angle, player.width / 4).X - player.width / 2 - 4;
         }
         public static bool NotEquipped(Player player, Item item, ref int index)
         {
@@ -40,19 +64,57 @@ namespace ArchaeaMod.Items
         {
             return Math.Round(Main.time, 0) % interval == 0;
         }
+        public static bool ArmorSet(Player player, string head, string body, string legs)
+        {
+            return player.armor[0].Name == head &&
+                   player.armor[1].Name == body &&
+                   player.armor[2].Name == legs;
+        }
+        public static void Bolt(Player owner, NPC target, ref Vector2 start)
+        {
+            float max = target.Distance(start);
+            for (int k = 0; k < max; k++)
+            {
+                for (int i = 0; i < 30; i++)
+                {
+                    if (start.Y > target.position.Y + target.height)
+                        return;
+                    float angle = Main.rand.NextFloat(0f, (float)Math.PI);
+                    start += NPCs.ArchaeaNPC.AngleToSpeed(angle, k);
+                    Projectile proj = Projectile.NewProjectileDirect(start, Vector2.Zero, ArchaeaMod.getMod.ProjectileType<Pixel>(), 20, 0f, owner.whoAmI, Pixel.Electric, Pixel.Active);
+                    proj.timeLeft = 3;
+                }
+            }
+        }
     }
 
-    public class Draw
+    public class ArchaeaItem_Global : GlobalItem
     {
-        public const float radian = 0.017f;
-        public float radians(float distance)
+        public override void HoldItem(Item item, Player player)
         {
-            return radian * (45f / distance);
+            if (player.releaseUseItem && player.controlUseItem && item.thrown)
+            {
+                float range = 500f;
+                Target[] targets = Target.GetTargets(player, range).Where(t => t != null).ToArray();
+                if (targets == null)
+                    return;
+                if (ArchaeaItem.ArmorSet(player, "Shock Mask", "Shock Plate", "Shock Greaves"))
+                    foreach (Target target in targets)
+                    {
+                        if (Target.HitByThrown(player, target))
+                        {
+                            Vector2 start = target.npc.Center - new Vector2(0f, 500f);
+                            ArchaeaItem.Bolt(player, target.npc, ref start);
+                        }
+                        break;
+                    }
+            }
         }
     }
 
     public class Target
     {
+        public int time;
         public NPC npc;
         public Player player;
         public const int
@@ -62,7 +124,7 @@ namespace ArchaeaMod.Items
             Fire = 3;
         private Mod mod
         {
-            get { return ModLoader.GetMod("ArchaeaMod_Debug"); }
+            get { return ModLoader.GetMod("ArchaeaMod"); }
         }
         public Target(NPC npc, Player player)
         {
@@ -88,6 +150,28 @@ namespace ArchaeaMod.Items
                     npc.AddBuff(BuffID.OnFire, 10);
                     break;
             }
+        }
+        public bool Elapsed(int interval)
+        {
+            return time++ % interval == 0 && time != 0;
+        }
+        public static bool HitByThrown(Player player, Target target)
+        {
+            foreach (Projectile proj in Main.projectile)
+                if (proj.owner == player.whoAmI && proj.thrown)
+                    if (proj.Hitbox.Distance(target.npc.Center) < proj.width + target.npc.width / 2 + 16f)
+                        return true;
+            return false;
+        }
+        public static Target GetClosest(Player owner, Target[] targets)
+        {
+            List<float> ranges = new List<float>();
+            foreach (Target target in targets)
+            {
+                ranges.Add(target.npc.Distance(owner.Center));
+                return targets[ranges.IndexOf(ranges.Min())];
+            }
+            return null;
         }
         public static Target[] GetTargets(Player player, float range)
         {
@@ -121,124 +205,6 @@ namespace ArchaeaMod.Items
                 targets[i] = new Target(Main.npc[i], null);
             }
             return targets;
-        }
-    }
-
-    public class Pixel : ModProjectile
-    {
-        public override void SetStaticDefaults()
-        {
-            DisplayName.SetDefault("Shard");
-        }
-        public override void SetDefaults()
-        {
-            projectile.width = 1;
-            projectile.height = 1;
-            projectile.damage = 0;
-            projectile.ignoreWater = true;
-            projectile.tileCollide = true;
-            projectile.friendly = true;
-            projectile.timeLeft = 120;
-            projectile.alpha = 255;
-        }
-        public override Color? GetAlpha(Color lightColor)
-        {
-            return Color.White * alpha;
-        }
-        private bool direction;
-        private int ai;
-        public const int
-            None = -1,
-            Default = 0,
-            Sword = 1;
-        private float rotate;
-        private float alpha;
-        private Dust dust;
-        private Player owner
-        {
-            get { return Main.player[projectile.owner]; }
-        }
-        public override bool PreAI()
-        {
-            switch (ai)
-            {
-                case 0:
-                    direction = owner.direction == 1 ? true : false;
-                    rotate = direction ? 0f : (float)Math.PI;
-                    dust = SetDust();
-                    goto case 1;
-                case 1:
-                    ai = 1;
-                    break;
-            }
-            return true;
-        }
-        public void AIType()
-        {
-            switch ((int)projectile.ai[1])
-            {
-                case None:
-                    projectile.alpha = 0;
-                    alpha = 1f;
-                    projectile.timeLeft = 100;
-                    break;
-                case Default:
-                    dust.position = projectile.position;
-                    break;
-                case Sword:
-                    NPCs.ArchaeaNPC.RotateIncrement(true, ref rotate, (float)Math.PI / 2f, 0.15f, out rotate);
-                    projectile.velocity += NPCs.ArchaeaNPC.AngleToSpeed(rotate, 0.25f);
-                    dust.position = projectile.position;
-                    break;
-            }
-        }
-        public override void AI()
-        {
-            AIType();
-        }
-        public override void Kill(int timeLeft)
-        {
-            switch ((int)projectile.ai[1])
-            {
-                case Default:
-                    break;
-                case Sword:
-                    NPCs.ArchaeaNPC.DustSpread(projectile.Center, 6, 4, 2f);
-                    break;
-            }
-        }
-        public const int
-            Fire = 1,
-            Dark = 2;
-        private Dust defaultDust
-        {
-            get { return Dust.NewDustDirect(Vector2.Zero, 1, 1, 0); }
-        }
-        public Dust SetDust()
-        {
-            switch ((int)projectile.ai[0])
-            {
-                case 0:
-                    break;
-                case Fire:
-                    return Dust.NewDustDirect(projectile.Center, 2, 2, DustID.Fire, 0f, 0f, 0, default(Color), Main.rand.NextFloat(1f, 3f));
-            }
-            return defaultDust;
-        }
-    }
-
-    public class Frozen : ModBuff
-    {
-        public override void SetDefaults()
-        {
-            DisplayName.SetDefault("Frozen");
-        }
-        public override void Update(NPC npc, ref int buffIndex)
-        {
-            npc.velocity.X /= 2f;
-            Dust dust = Dust.NewDustDirect(npc.position, npc.width, npc.height, DustID.t_Frozen);
-            dust.noGravity = true;
-            dust.noLight = false;
         }
     }
 }

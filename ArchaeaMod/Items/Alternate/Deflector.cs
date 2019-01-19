@@ -11,7 +11,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace ArchaeaMod.Items
+namespace ArchaeaMod.Items.Alternate
 {
     public class Deflector : ModItem
     {
@@ -160,7 +160,6 @@ namespace ArchaeaMod.Items
         }
         public void Update()
         {
-            Debug.ModInfo(new object[] { t, npc, target });
             proj.Center = GetPosition(point, radius);
             if (!thrown && Main.mouseLeftRelease && Main.mouseLeft)
             {
@@ -227,7 +226,16 @@ namespace ArchaeaMod.Items
             }
 
         }
-        
+        public static void ShockTarget(Vector2 itemHitbox, NPC target, int damage)
+        {
+            float angle = NPCs.ArchaeaNPC.AngleTo(itemHitbox, target.Center);
+            for (int d = 0; d < target.Distance(itemHitbox); d++)
+            {
+                Dust dust = Dust.NewDustDirect(itemHitbox + NPCs.ArchaeaNPC.AngleToSpeed(angle, d), 1, 1, DustID.Fire);
+            }
+            target.StrikeNPC(damage, 0f, 0);
+        }
+
         public NPC[] GetTargets(float range)
         {
             NPC[] npcs = new NPC[256];

@@ -10,7 +10,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace ArchaeaMod.Items
+namespace ArchaeaMod.Items.Alternate
 {
     public class Calling : ModItem
     {
@@ -182,12 +182,15 @@ namespace ArchaeaMod.Items
             }
             return true;
         }
+
+        private int type = -2;
+        private Vector2 move;
         public override void AI()
         {
             if (ArchaeaItem.Elapsed(60))
             {
                 targets = Target.GetTargets(projectile, range).Where(t => t != null).ToArray();
-                target = GetClosest(targets);
+                target = Target.GetClosest(owner, targets);
             }
             if (targets == null)
                 return;
@@ -220,17 +223,12 @@ namespace ArchaeaMod.Items
                 }
             }
         }
-
-        public Target GetClosest(Target[] targets)
+        public override bool PreKill(int timeLeft)
         {
-            List<float> ranges = new List<float>();
-            foreach (Target target in targets)
-            {
-                ranges.Add(target.npc.Distance(owner.Center));
-                return targets[ranges.IndexOf(ranges.Min())];
-            }
-            return null;
+            timeLeft = 36000;
+            return false;
         }
+
         protected bool LeftClick()
         {
             return Main.mouseLeftRelease && Main.mouseLeft;

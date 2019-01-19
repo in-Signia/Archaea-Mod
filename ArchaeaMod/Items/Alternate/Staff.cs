@@ -10,7 +10,9 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace ArchaeaMod.Items
+using ArchaeaMod.Projectiles;
+
+namespace ArchaeaMod.Items.Alternate
 {
     public class Staff : ModItem
     {
@@ -67,7 +69,7 @@ namespace ArchaeaMod.Items
                 return false;
             if (update)
             {
-                targets = GetTargets(player).Where(t => t != null).ToArray();
+                targets = Target.GetTargets(player, 135f).Where(t => t != null).ToArray();
                 update = false;
             }
             return true;
@@ -97,7 +99,7 @@ namespace ArchaeaMod.Items
             if (index == 5)
             {
                 foreach (Target target in targets.Where(t => t != null))
-                    target.AttackEffect(Launch);
+                    target.AttackEffect(Target.ShockWave);
                 BlastWave(player);
                 index = 0;
             }
@@ -121,17 +123,6 @@ namespace ArchaeaMod.Items
             dust = new Dust[5];
             time = 0;
             alpha = 0f;
-        }
-        protected Target[] GetTargets(Player player)
-        {
-            Target[] targets = new Target[255];
-            for (int i = 0; i < Main.npc.Length; i++)
-            {
-                if (!Shield.GetOnCondition(Main.npc[i])) continue;
-                if (player.Distance(Main.npc[i].Center) > 135f) continue;
-                targets[i] = new Target(Main.npc[i], player);
-            }
-            return targets;
         }
     }
     

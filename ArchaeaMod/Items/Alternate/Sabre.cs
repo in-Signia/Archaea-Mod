@@ -11,7 +11,9 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace ArchaeaMod.Items
+using ArchaeaMod.Projectiles;
+
+namespace ArchaeaMod.Items.Alternate
 {
     public class Sabre : ModItem
     {
@@ -34,13 +36,20 @@ namespace ArchaeaMod.Items
             item.useTurn = true;
         }
 
+        private int count;
         private float upward = 0.5f;
-        public override void UseItemHitbox(Player player, ref Rectangle hitbox, ref bool noHitbox)
+        public override bool UseItem(Player player)
         {
+            count = 0;
             if (Main.MouseWorld.X > player.position.X)
                 player.direction = 1;
             else player.direction = -1;
-            Projectile.NewProjectileDirect(player.direction == 1 ? hitbox.TopRight() : hitbox.TopLeft(), NPCs.ArchaeaNPC.AngleToSpeed(player.direction == 1 ? upward * -1 : (float)Math.PI + upward, 6f), mod.ProjectileType<Pixel>(), item.damage, item.knockBack, player.whoAmI, Pixel.Fire);
+            return true;
+        }
+        public override void UseItemHitbox(Player player, ref Rectangle hitbox, ref bool noHitbox)
+        {
+            if (count++ % 4 == 0)
+                Projectile.NewProjectileDirect(player.direction == 1 ? hitbox.TopRight() : hitbox.TopLeft(), NPCs.ArchaeaNPC.AngleToSpeed(player.direction == 1 ? upward * -1 : (float)Math.PI + upward, 6f), mod.ProjectileType<Pixel>(), item.damage, item.knockBack, player.whoAmI, Pixel.Fire, Pixel.Sword);
         }
     }
 }
