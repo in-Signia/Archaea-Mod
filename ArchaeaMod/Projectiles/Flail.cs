@@ -121,6 +121,37 @@ namespace ArchaeaMod.Projectiles
                 }
             }
         }
+        public Texture2D chain
+        {
+            get { return mod.GetTexture("Gores/chain"); }
+        }
+        public override bool PreDraw(SpriteBatch spriteBatch, Color lightColor)
+        {
+            DrawChain(owner.Center, projectile.Center, chain, spriteBatch);
+            return true;
+        }
+        public void DrawChain(Vector2 start, Vector2 end, Texture2D texture, SpriteBatch sb)
+        {
+            start -= Main.screenPosition;
+            end -= Main.screenPosition;
+
+            Vector2 chain = end - start;
+            float length = chain.Length();
+            float linkLength = texture.Height;
+            int numLinks = (int)Math.Ceiling(length / linkLength);
+            float rotation = (float)Math.Atan2(chain.Y, chain.X);
+
+            Vector2[] links = new Vector2[numLinks];
+            for (int i = 0; i < numLinks; i++)
+            {
+                links[i] = start + chain / numLinks * i;
+            }
+            for (int i = 0; i < links.Length; i++)
+            {
+                Color color = Lighting.GetColor((int)(links[i].X + Main.screenPosition.X) / 16, (int)(links[i].Y + Main.screenPosition.Y) / 16);
+                sb.Draw(texture, new Rectangle((int)links[i].X, (int)links[i].Y, texture.Width, (int)linkLength), null, color, rotation + Draw.radian * 90f, new Vector2(texture.Width / 2, linkLength), SpriteEffects.None, 0f);
+            }
+        }
 
         private bool collision;
         public void FloatyAI()
