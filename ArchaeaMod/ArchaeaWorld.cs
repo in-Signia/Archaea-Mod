@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Xna.Framework;
@@ -13,116 +14,187 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.World.Generation;
 
+using ArchaeaMod.Merged.Tiles;
+using ArchaeaMod.Merged.Walls;
+
 namespace ArchaeaMod
 {
     public class ArchaeaWorld : ModWorld
     {
+        public static Mod getMod
+        {
+            get { return ModLoader.GetMod("ArchaeaMod"); }
+        }
+        public static ushort magnoStone
+        {
+            get { return (ushort)getMod.TileType<m_stone>(); }
+        }
+        public static ushort magnoBrick
+        {
+            get { return (ushort)getMod.TileType<m_brick>(); }
+        }
+        public static ushort magnoOre
+        {
+            get { return (ushort)getMod.TileType<m_ore>(); }
+        }
+        public static ushort magnoChest
+        {
+            get { return (ushort)getMod.TileType<m_chest>(); }
+        }
+        public static ushort cOre
+        {
+            get { return (ushort)getMod.TileType<c_ore>(); }
+        }
+        public static ushort crystal
+        {
+            get { return (ushort)getMod.TileType<c_crystalsmall>(); }
+        }
+        public static ushort crystal2x1
+        {
+            get { return (ushort)getMod.TileType<c_crystal2x1>(); }
+        }
+        public static ushort crystal2x2
+        {
+            get { return (ushort)getMod.TileType<c_crystal2x2>(); }
+        }
+        public static ushort magnoBrickWall
+        {
+            get { return (ushort)getMod.WallType<magno_brick>(); }
+        }
+        public static ushort magnoStoneWall
+        {
+            get { return (ushort)getMod.WallType<magno_stone>(); }
+        }
+        public static Miner miner;
         public static List<Vector2> origins = new List<Vector2>();
         private Treasures t;
+        public static Vector2[] genPosition;
         public override void ModifyWorldGenTasks(List<GenPass> tasks, ref float totalWeight)
         {
-            int index = tasks.FindIndex(pass => pass.Name.Equals("Granite"));
-            tasks.Insert(index, new PassLegacy("Cave Generation", delegate (GenerationProgress progress)
+            int CavesIndex = tasks.FindIndex(genpass => genpass.Name.Equals("Granite")); // Granite
+            if (CavesIndex != -1)
             {
-                progress.Start(1f);
-                var cave = new MagnoCave();
-                t = new Treasures();
-                progress.Message = "Underground Magno";
-                cave.Initialize(TileID.PearlstoneBrick, WallID.CaveUnsafe);
-                for (int i = 0; i < cave.diggers.Length; i++)
+                miner = new Miner();
+                tasks.Insert(CavesIndex, new PassLegacy("Miner", delegate (GenerationProgress progress)
                 {
-                    Vector2 center = MagnoCave.Center();
-                    origins.Add(center);
-                    cave.diggers[i].DigSequence(center);
-                    progress.Value += cave.rand * 0.1f / cave.rand;
-                }
-                t.Initialize(50, TileID.Containers, TileID.PearlstoneBrick, WallID.CaveUnsafe);
-                t.PlaceChests(10, 15);
-                origins.Clear();
-                cave = null;
-                t = null;
-                progress.Value = 1f;
-                progress.End();
-            }));
-            int index2 = tasks.FindIndex(pass => pass.Name.Equals("Shinies"));
-            tasks.Insert(index2, new PassLegacy("Den Generation", delegate (GenerationProgress progress)
+                    progress.Start(1f);
+                    progress.Message = "MINER";
+                    miner.active = true;
+                    miner.Reset();
+                    while (miner.active)
+                        miner.Update();
+                    genPosition = miner.genPos;
+                    progress.End();
+                }));
+            }
+            int shinies = tasks.FindIndex(pass => pass.Name.Equals("Shinies"));
+            if (shinies != -1)
             {
-                progress.Start(1f);
-                progress.Message = "Magno Cavern";
-                var den = new MagnoDen();
-                den.Start(den, false);
-                if (den == MagnoDen.mDen[0])
+                tasks.Insert(shinies, new PassLegacy("Mod Shinies", delegate (GenerationProgress progress)
                 {
-                    while (MagnoDen.whoAmI < MagnoDen.max - 1)
+                    progress.Start(1f);
+                    for (int k = 0; k < (int)((4200 * 1200) * 6E-05); k++)
                     {
-                        progress.Value = (float)MagnoDen.whoAmI / MagnoDen.max;
-                        MagnoDen m = MagnoDen.mDen[MagnoDen.whoAmI];
-                        if (m == null)
-                        {
-                            MagnoDen.whoAmI++;
-                            continue;
-                        }
-                        m.CheckComplete(2);
-                        while (!m.StandardMove()) ;
-                        m.lookFurther = 0;
-                        m.points = 0;
-                        if (m.center.Y > m.maxY)
-                        {
-                            int block = -200;
-                            bool bRand = WorldGen.genRand.Next(2) == 0;
-                            m.center += new Vector2(bRand ? block / 4 : block * -1 / 4, block);
-                        }
+                        //  WorldGen.TileRunner(WorldGen.genRand.Next((int)(genPosition[0].X / 16) - miner.edge / 2, (int)(genPosition[1].X / 16) + miner.edge / 2), WorldGen.genRand.Next((int)genPosition[0].Y / 16 - miner.edge / 2, (int)genPosition[1].Y / 16 + miner.edge / 2), WorldGen.genRand.Next(15, 18), WorldGen.genRand.Next(2, 6), magnoDirt, false, 0f, 0f, false, true);
+                        WorldGen.TileRunner(WorldGen.genRand.Next((int)(genPosition[0].X / 16) - miner.edge / 2, (int)(genPosition[1].X / 16) + miner.edge / 2), WorldGen.genRand.Next((int)genPosition[0].Y / 16 - miner.edge / 2, (int)genPosition[1].Y / 16 + miner.edge / 2), WorldGen.genRand.Next(9, 12), WorldGen.genRand.Next(2, 6), magnoOre, false, 0f, 0f, false, true);
+                        progress.Value = k / (float)((4200 * 1200) * 6E-05);
                     }
-                }
-                den.GetBounds();
-                den.FinalDig();
-                den.Terminate();
-                den = null;
-                progress.Value = 1f;
-                progress.End();
-            }));
-            tasks.Insert(index2 + 1, new PassLegacy("Mod Generation", delegate (GenerationProgress progress)
+                    progress.End();
+                }));
+            }
+            int index2 = tasks.FindIndex(pass => pass.Name.Equals("Lakes"));
+            if (index2 != -1)
             {
-                progress.Start(1f);
-                progress.Message = "Magno extras";
-                t = new Treasures();
-                int width = Main.maxTilesX - 50;
-                int height = Main.maxTilesY - 50;
-                Vector2[] walls = Treasures.GetWall(50, 50, (int)(Main.rightWorld / 16f) - 50, (int)(Main.bottomWorld / 16f) - 200, new ushort[] { TileID.PearlstoneBrick }, 3);
-                Vector2[] floors = Treasures.GetFloor(new Vector2(50, 50), width, height, false, new ushort[] { TileID.PearlstoneBrick });
-                foreach (Vector2 wall in walls)
-                    if (wall != Vector2.Zero)
-                        t.PlaceTile((int)wall.X, (int)wall.Y, TileID.Torches, true, true, 4);
-                foreach (Vector2 floor in floors)
-                    if (floor != Vector2.Zero)
-                        t.PlaceTile((int)floor.X, (int)floor.Y, TileID.Torches, false, false, 4);
-                t = null;
-                progress.Value = 1f;
-                progress.End();
-            }));
-            int index3 = tasks.FindIndex(pass => pass.Name.Equals("Lakes"));
-            tasks.Insert(index3, new PassLegacy("Sky Generation", delegate (GenerationProgress progress)
+                tasks.Insert(index2, new PassLegacy("Sky Generation", delegate (GenerationProgress progress)
+                {
+                    progress.Start(1f);
+                    progress.Message = "Fort";
+                    Vector2 position;
+                    do
+                    {
+                        position = new Vector2(WorldGen.genRand.Next(200, Main.maxTilesX - 200), 200);
+                    } while (position.X < Main.spawnTileX + 150 && position.X > Main.spawnTileX - 150);
+                    var s = new Structures(new Vector2(2025, 200));
+                    s.Initialize();
+                    s.SkyRoom(true);
+                    progress.Value = 1f;
+                    progress.End();
+                }));
+            }
+            int index3 = tasks.FindIndex(pass => pass.Name.Equals("Clean Up Dirt"));
+            if (index3 != -1)
             {
-                progress.Start(1f);
-                progress.Message = "Fort";
-                var s = new Structures(new Vector2(2025, 120));
-                s.Initialize();
-                s.SkyRoom(true);
-                s = null;
-                progress.Value = 1f;
-                progress.End();
-            }));
-            int index4 = tasks.FindIndex(pass => pass.Name.Contains("Clean Up Dirt"));
-            tasks.Insert(index4, new PassLegacy("Structure Generation", delegate (GenerationProgress progress)
+                tasks.Insert(index3, new PassLegacy("Mod Generation", delegate (GenerationProgress progress)
+                {
+                    progress.Start(1f);
+                    progress.Message = "Magno extras";
+                    t = new Treasures();
+                    int width = Main.maxTilesX - 100;
+                    int height = Main.maxTilesY - 100;
+                    Vector2[] walls = Treasures.GetWall(100, 100, (int)(Main.rightWorld / 16f) - 100, (int)(Main.bottomWorld / 16f) - 200, new ushort[] { magnoStone });
+                    Vector2[] floors = Treasures.GetFloor(new Vector2(100, 100), width, height, false, new ushort[] { magnoStone });
+                    foreach (Vector2 wall in walls)
+                        t.PlaceTile((int)wall.X, (int)wall.Y, crystal, false, false, 6);
+                    foreach (Vector2 floor in floors)
+                        if (floor != Vector2.Zero)
+                        {
+                            int i = (int)floor.X;
+                            int j = (int)floor.Y;
+                            if (!Main.tile[i + 1, j].active())
+                            {
+                                if (WorldGen.genRand.Next(4) == 0)
+                                    t.PlaceTile(i, j, crystal2x2, true, false, 8);
+                                else t.PlaceTile(i, j, crystal2x1, true, false, 8);
+                            }
+                            else t.PlaceTile(i, j, crystal, false, false, 8);
+                        }
+                    progress.Value = 1f;
+                    progress.End();
+                }));
+            }
+            int index4 = tasks.FindIndex(pass => pass.Name.Equals("Pyramids"));
+            if (index4 != -1)
+            {
+                tasks.Insert(index4, new PassLegacy("Mod Generation", delegate (GenerationProgress progress)
+                {
+                    for (int j = 100; j < Main.maxTilesY - 250; j++)
+                        for (int i = 100; i < Main.maxTilesX - 100; i++)
+                        {
+                            Tile t = Main.tile[i, j];
+                            Tile[] tiles = new Tile[]
+                            {
+                                Main.tile[i, j + 1],
+                                Main.tile[i - 1, j],
+                                Main.tile[i + 1, j]
+                            };
+                            int count = 0;
+                            if (t.type == crystal)
+                            {
+                                foreach (Tile tile in tiles)
+                                {
+                                    if (!tile.active())
+                                        count++;
+                                    if (count == 3)
+                                    {
+                                        t.active(false);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                }));
+            }
+            int index5 = tasks.FindIndex(pass => pass.Name.Equals("Dirt Rock Wall Runner"));
+            tasks.Insert(index5, new PassLegacy("Structure Generation", delegate (GenerationProgress progress)
             {
                 progress.Start(1f);
                 progress.Message = "More Magno";
                 var s = new Structures.Magno();
-                Vector2 origin = new Vector2(50, 50);
-                Vector2[] regions = Treasures.GetRegion(origin, Main.maxTilesX - 100, Main.maxTilesY - 250, false, true, new ushort[] { TileID.PearlstoneBrick });
+                Vector2 origin = new Vector2(100, 100);
+                Vector2[] regions = Treasures.GetRegion(origin, Main.maxTilesX - 100, Main.maxTilesY - 250, false, true, new ushort[] { magnoStone });
                 int count = 0;
                 int total = (int)Math.Sqrt(regions.Length);
-                    int max = WorldGen.genRand.Next(5, 8);
+                int max = WorldGen.genRand.Next(5, 8);
                 for (int i = 0; i < max; i++)
                 {
                     s.Initialize();
@@ -135,10 +207,10 @@ namespace ArchaeaMod
                     count = 0;
                     progress.Value = (float)i / max;
                 }
-                s = null;
                 progress.Value = 1f;
                 progress.End();
             }));
+        
             #region Vector2 array
             /* int x = MagnoDen.bounds.X;
             int y = MagnoDen.bounds.Y;
@@ -159,18 +231,22 @@ namespace ArchaeaMod
         private bool q;
         public override void PreUpdate()
         {
-            if (!begin)
-            {
-                //  s = new Structures(new Vector2(Main.spawnTileX, Main.spawnTileY - 80));
-                //  t = new Treasures();
-                begin = true;
-            }
             if (ArchaeaPlayer.KeyPress(Keys.Q))
             {
+                if (!begin)
+                {
+                    //  s = new Structures(new Vector2(Main.spawnTileX, Main.spawnTileY - 80));
+                    //  t = new Treasures();
+                    begin = true;
+                }
                 //var s = new Structures(new Vector2(Main.spawnTileX, Main.spawnTileY - 50));
                 //s.Initialize();
                 //s.SkyRoom(true);
             }
+        }
+        public static bool Inbounds(int i, int j)
+        {
+            return i < Main.maxTilesX - 50 && i > 50 && j < Main.maxTilesY - 200 && j > 50;
         }
     }
     
@@ -210,7 +286,7 @@ namespace ArchaeaMod
                 {
                     int x = (int)ground.X;
                     int y = (int)ground.Y;
-                    if (!MagnoDen.Inbounds(x, y)) continue;
+                    if (!ArchaeaWorld.Inbounds(x, y)) continue;
                     if (Main.tile[x, y].wall == wallID && WorldGen.genRand.Next(8) == 0)
                         WorldGen.PlaceTile(x, y, newTileID, true, true);
                     if (Main.tile[x, y].type == newTileID)
@@ -330,7 +406,7 @@ namespace ArchaeaMod
                 for (int i = (int)region.X; i < (int)region.X + width; i++)
                     for (int j = (int)region.Y; j < (int)region.Y + height; j++)
                     {
-                        if (!MagnoDen.Inbounds(i, j)) continue;
+                        if (!ArchaeaWorld.Inbounds(i, j)) continue;
                         if (overflow & WorldGen.genRand.Next(5) == 0) continue;
                         Tile floor = Main.tile[i, j];
                         Tile ground = Main.tile[i, j + 1];
@@ -354,7 +430,7 @@ namespace ArchaeaMod
             for (int i = (int)region.X - radius; i < (int)region.X + radius; i++)
                 for (int j = (int)region.Y - radius; j < (int)region.Y + radius; j++)
                 {
-                    if (!MagnoDen.Inbounds(i, j)) continue;
+                    if (!ArchaeaWorld.Inbounds(i, j)) continue;
                     if (overflow & WorldGen.genRand.Next(5) == 0) continue;
                     Tile roof = Main.tile[i, j];
                     Tile ceiling = Main.tile[i, j + 1];
@@ -380,7 +456,7 @@ namespace ArchaeaMod
                     for (int j = (int)region.Y; j < (int)region.Y + height; j++)
                     {
                         if (count >= tiles.Length) continue;
-                        if (!MagnoDen.Inbounds(i, j)) continue;
+                        if (!ArchaeaWorld.Inbounds(i, j)) continue;
                         if (attach && Main.tile[i, j].type != tileType) continue;
                         if (overflow & WorldGen.genRand.Next(5) == 0) continue;
                         tiles[count] = new Vector2(i, j);
@@ -398,7 +474,7 @@ namespace ArchaeaMod
                     for (int j = (int)region.Y; j < (int)region.Y + height; j++)
                     {
                         if (count >= tiles.Length) continue;
-                        if (!MagnoDen.Inbounds(i, j)) continue;
+                        if (!ArchaeaWorld.Inbounds(i, j)) continue;
                         if (overflow & WorldGen.genRand.Next(5) == 0) continue;
                         Tile tile = Main.tile[i, j];
                         Tile wallL = Main.tile[i - 1, j];
@@ -422,24 +498,25 @@ namespace ArchaeaMod
         public static Vector2[] GetWall(int x, int y, int width, int height, ushort[] tileTypes = null, int radius = -1)
         {
             int count = 0;
-            Vector2[] walls = new Vector2[width * height * tileTypes.Length];
+            List<Vector2> list = new List<Vector2>();
             foreach (ushort tileType in tileTypes)
                 for (int i = x; i < width; i++)
                     for (int j = y; j < width; j++)
                     {
-                        if (!MagnoDen.Inbounds(i, j))
+                        if (!ArchaeaWorld.Inbounds(i, j))
                             continue;
                         if (radius != -1 && Vicinity(new Vector2(i, j), radius, tileType))
                             continue;
+                        Tile up = Main.tile[i, j - 1];
                         Tile left = Main.tile[i - 1, j];
                         Tile right = Main.tile[i + 1, j];
-                        if (left.type == tileType || right.type == tileType)
+                        if ((left.type == tileType || right.type == tileType) && !up.active())
                         {
-                            walls[count] = new Vector2(i, j);
+                            list.Add(new Vector2(i, j));
                             count++;
                         }
                     }
-            return walls;
+            return list.ToArray();
         }
         public static bool Vicinity(Vector2 region, int radius, ushort tileType)
         {
@@ -448,7 +525,7 @@ namespace ArchaeaMod
             for (int i = x - radius; i < x + radius; i++)
                 for (int j = y - radius; j < y + radius; j++)
                 {
-                    if (!MagnoDen.Inbounds(i, j)) continue;
+                    if (!ArchaeaWorld.Inbounds(i, j)) continue;
                     if (Main.tile[i, j].type == tileType)
                         return true;
                 }
@@ -462,7 +539,7 @@ namespace ArchaeaMod
             for (int i = x - radius; i < x + radius; i++)
                 for (int j = y - radius; j < y + radius; j++)
                 {
-                    if (!MagnoDen.Inbounds(i, j)) continue;
+                    if (!ArchaeaWorld.Inbounds(i, j)) continue;
                     Tile tile = Main.tile[i, j];
                     if (tile.type == tileType)
                         count++;
@@ -553,7 +630,7 @@ namespace ArchaeaMod
                         {
                             x = (int)origin.X + 15 * i;
                             y = (int)origin.Y;
-                            //  CloudForm(x, y, 20);
+                            CloudForm(x, y, 20);
                         }
                         break;
                     case -2:
@@ -681,7 +758,7 @@ namespace ArchaeaMod
                 {
                     int cos = (int)(origin.X + (r * Math.Cos(degrees)));
                     int sine = (int)(origin.Y + (r / 2 * Math.Sin(degrees)));
-                    ushort tileType = WorldGen.genRand.NextFloat() <= 34f ? TileID.Dirt : TileID.Cloud;
+                    ushort tileType = TileID.Cloud;
                     if (r >= 0.75f && WorldGen.genRand.Next(odds) == 0)
                         WorldGen.PlaceTile(cos, sine, TileID.Cloud, true, true);
                     cos = (int)(origin.X + (r * 1.5f * Math.Cos(degrees)));
@@ -1049,7 +1126,7 @@ namespace ArchaeaMod
                 bool success = false;
                 int x = (int)origin.X;
                 int y = (int)origin.Y;
-                if (!MagnoDen.Inbounds(x, y))
+                if (!ArchaeaWorld.Inbounds(x, y))
                     return false;
                 int m = 0;
                 int n = 0;
@@ -1191,87 +1268,7 @@ namespace ArchaeaMod
         {
             index = 0;
         }
-        /* Depracated structure generation
-        public int total;
-        private int m = 4;
-        private int X;
-        private int Y;
-        private int[,] array;
-        public void Start()
-        {
-            int x = MagnoDen.bounds.X;
-            int y = MagnoDen.bounds.Y;
-            int width = MagnoDen.bounds.Width / m;
-            int height = MagnoDen.bounds.Height / m;
-            int index = 0;
-            array = new int[width, height];
-            while (index < Math.Min(array.GetLength(0), array.GetLength(1)))
-            {
-                for (int i = index; i < array.GetLength(0); i++)
-                {
-                    for (int j = index; j < array.GetLength(1); j++)
-                    {
-                        int rand = WorldGen.genRand.Next(25);
-                        array[i, j] = rand;
-                        if (rand == 0)
-                        {
-                            X = x + (i * m);
-                            Y = y + (j * m);
-                            Vector2 origin = new Vector2(X, Y);
-                            ArchaeaWorld.origins.Add(origin);
-                            Generate(origin);
-                            total++;
-                            break;
-                        }
-                    }
-                    index++;
-                    break;
-                }
-            }
-        }
-        public void Generate(Vector2 region, ushort tileType = TileID.StoneSlab, ushort wallType = WallID.StoneSlab)
-        {
-            int count = 0;
-            int max = WorldGen.genRand.Next(3, 4);
-            int x = (int)region.X;
-            int y = (int)region.Y;
-            int randX = WorldGen.genRand.Next(7, 13);
-            int randY = WorldGen.genRand.Next(5, 7);
-            for (int i = x - 5; i < x + randX; i++)
-                for (int j = y; j < y + randY; j++)
-                {
-                    WorldGen.KillTile(i, j, false, false, true);
-                    WorldGen.PlaceWall(i, j, wallType, true);
-                    Main.NewText(new Vector2(i, j).ToString());
-                }
-            while (count < max)
-            {
-                for (int i = x - 5; i < x + randX; i++)
-                    for (int j = y; j < y + randY; j++)
-                    {
-                        int left = x - 5;
-                        int right = x - 5 + randX;
-                        int top = y;
-                        int bottom = y + randY;
-                        if (i == left || i == right || j == top || j == bottom)
-                            WorldGen.PlaceTile(i, j, tileType, true, true);
-                        bool gap = j == bottom & i >= 3 && i <= 6;
-                        if (gap)
-                            WorldGen.KillTile(i, j, false, false, true);
-                    }
-                x += randX / 4 * (WorldGen.genRand.Next(2) == 0 ? -1 : 1);
-                y += randY;
-                count++;
-            }
-        }
-        internal Tile ModifyTile(int i, int j, ushort type)
-        {
-            Main.tile[i, j].type = type;
-            Main.tile[i, j].active(true);
-            return Main.tile[i, j];
-        }
-        */
-            }
+    }
     public class Digger
     {
         private int max;
@@ -1367,6 +1364,560 @@ namespace ArchaeaMod
                 count++;
             }
             path = paths;
+        }
+    }
+
+    public class Miner : ModWorld
+    {
+        public Mod moda = ModLoader.GetMod("ArchaeaMod");
+        public static string progressText = "";
+        static int numMiners = 0, randomX, randomY, bottomBounds = Main.maxTilesY, rightBounds = Main.maxTilesX, circumference, ticks;
+        public int edge = 128;
+        float mineBlockX = 256, mineBlockY = 256;
+        float RightBounds;
+        static bool runner = false, grassRunner = false, fillerRunner = false, russianRoulette = false;
+        public Vector2 center = new Vector2((Main.maxTilesX / 2) * 16, (Main.maxTilesY / 2) * 16);
+        public int buffer = 1, offset = 200;
+        int whoAmI = 0, type = 0;
+        int XOffset = 512, YOffset = 384;
+        public int jobCount = 0;
+        public int jobCountMax = 32;
+        static int moveID, lookFurther, size = 1;
+        public Vector2 minerPos;
+        public Vector2 finalVector;
+        static Vector2 oldMinerPos, deadZone = Vector2.Zero;
+        Vector2 position;
+        Vector2 mineBlock;
+        public Vector2 baseCenter;
+        bool init = false;
+        bool fail;
+        bool switchMode = false;
+        public bool active = true;
+        public Vector2[] genPos = new Vector2[2];
+        Vector2[] minePath = new Vector2[800 * 800];
+        //  for loop takes care of need to generate new miners
+        //  Miner[] ID = new Miner[400];
+        public void Init()
+        {
+            if (whoAmI == 0)
+            {
+                //  remove these comments for public version
+                float offset = XOffset * WorldGen.genRand.Next(-1, 1);
+                if (offset == 0)
+                {
+                    offset = XOffset;
+                }
+                minerPos = center + new Vector2(offset * 16f, Main.maxTilesY - YOffset);
+                center = minerPos;
+                baseCenter = minerPos;
+            }
+            else
+            {
+                int RandomX = WorldGen.genRand.Next(-2, 2);
+                int RandomY = WorldGen.genRand.Next(-2, 2);
+                if (RandomX != 0 && RandomY != 0)
+                {
+                    mineBlock = new Vector2(mineBlockX * RandomX, mineBlockY * RandomY);
+                    minerPos += mineBlock;
+                }
+                else
+                {
+                    mineBlock = new Vector2(mineBlockX, mineBlockY);
+                    minerPos += mineBlock;
+                    return;
+                }
+            }
+            minePath[0] = center;
+            init = true;
+            //  Main.spawnTileX = (int)center.X / 16;
+            //  Main.spawnTileY = (int)center.Y / 16;
+            progressText = jobCount + " initiated, " + Math.Round((double)((float)jobCount / jobCountMax) * 10, 0) + "%";
+        }
+        public void Update()
+        {
+            if (!init) Init();
+            if (init && whoAmI == 0)
+            {
+                for (int k = 0; whoAmI < 800; k++)
+                {
+                    Mine();
+                }
+            }
+            else if (whoAmI > 0 && whoAmI <= 800)
+            {
+                for (int k = 0; whoAmI < 800; k++)
+                {
+                    Mine();
+                }
+                if (whoAmI == 800)
+                {
+                    jobCount++;
+                    Init();
+                    whoAmI = 1;
+                }
+            }
+
+            if (minerPos.X < center.X)
+                center.X = minerPos.X;
+            if (minerPos.Y < center.Y)
+                center.Y = minerPos.Y;
+            if (minerPos.X > oldMinerPos.X)
+                oldMinerPos.X = minerPos.X;
+            if (minerPos.Y > oldMinerPos.Y)
+                oldMinerPos.Y = minerPos.Y;
+
+            if (jobCount > jobCountMax)
+            {
+                progressText = "Process complete";
+                int layer = (int)Main.worldSurface;
+                int offset = Main.maxTilesY / 2;
+                if (minerPos.X < center.X)
+                {
+                    genPos[0] = new Vector2(minerPos.X, center.Y);
+                    genPos[1] = oldMinerPos;
+                }
+                if (minerPos.X > center.X)
+                {
+                    genPos[0] = center;
+                    genPos[1] = oldMinerPos;
+                }
+                if (!switchMode)
+                {
+                    switchMode = true;
+                    Dig();
+                }
+            }
+            if (switchMode)
+            {
+                //  jobCount--;
+                Terminate();
+                //  Reset();
+            }
+        }
+        public void AverageMove() // most average path, sometimes most interesting
+        {
+            size = WorldGen.genRand.Next(1, 3);
+            if (WorldGen.genRand.Next(4) == 1)
+            {
+                minerPos.X += 16;
+                Dig();
+            }
+            if (WorldGen.genRand.Next(4) == 1)
+            {
+                minerPos.X -= 16;
+                Dig();
+            }
+            if (WorldGen.genRand.Next(4) == 1)
+            {
+                minerPos.Y += 16;
+                Dig();
+            }
+            if (WorldGen.genRand.Next(4) == 1)
+            {
+                minerPos.Y -= 16;
+                Dig();
+            }
+            GenerateNewMiner();
+        }
+        public void DirectionalMove() // tends to stick to a path
+        {
+            size = WorldGen.genRand.Next(1, 3);
+            if (WorldGen.genRand.Next(4) == 1 && Main.tile[(int)(minerPos.X + 16 + (16 * lookFurther)) / 16, (int)minerPos.Y / 16].active())
+            {
+                minerPos.X += 16;
+                Dig();
+            }
+            if (WorldGen.genRand.Next(4) == 1 && Main.tile[(int)(minerPos.X - 16 - (16 * lookFurther)) / 16, (int)minerPos.Y / 16].active())
+            {
+                minerPos.X -= 16;
+                Dig();
+            }
+            if (WorldGen.genRand.Next(4) == 1 && Main.tile[(int)minerPos.X / 16, (int)(minerPos.Y + 16 + (16 * lookFurther)) / 16].active())
+            {
+                minerPos.Y += 16;
+                Dig();
+            }
+            if (WorldGen.genRand.Next(4) == 1 && Main.tile[(int)minerPos.X / 16, (int)(minerPos.Y - 16 - (16 * lookFurther)) / 16].active())
+            {
+                minerPos.Y -= 16;
+                Dig();
+            }
+            if (!Main.tile[(int)(minerPos.X + 16 + (16 * lookFurther)) / 16, (int)minerPos.Y / 16].active() &&
+                !Main.tile[(int)(minerPos.X - 16 - (16 * lookFurther)) / 16, (int)minerPos.Y / 16].active() &&
+                !Main.tile[(int)minerPos.X / 16, (int)(minerPos.Y + 16 + (16 * lookFurther)) / 16].active() &&
+                !Main.tile[(int)minerPos.X / 16, (int)(minerPos.Y - 16 - (16 * lookFurther)) / 16].active())
+            {
+                lookFurther++;
+                if (lookFurther % 2 == 0) progressText = "Looking " + lookFurther + " tiles further";
+                PlaceWater();
+            }
+            else lookFurther = 0;
+            GenerateNewMiner();
+        }
+        public void ToTheSurfaceMove() // it likes randomizer = 3
+        {
+            moveID = 0;
+            if (Main.tile[(int)(minerPos.X + 16 + (16 * lookFurther)) / 16, (int)minerPos.Y / 16].active())
+            {
+                moveID++;
+            }
+            if (Main.tile[(int)(minerPos.X - 16 - (16 * lookFurther)) / 16, (int)minerPos.Y / 16].active())
+            {
+                moveID++;
+            }
+            if (Main.tile[(int)minerPos.X / 16, (int)(minerPos.Y + 16 + (16 * lookFurther)) / 16].active())
+            {
+                moveID++;
+            }
+            if (Main.tile[(int)minerPos.X / 16, (int)(minerPos.Y - 16 - (16 * lookFurther)) / 16].active())
+            {
+                moveID++;
+            }
+            int randomizer = WorldGen.genRand.Next(0, moveID);
+            size = WorldGen.genRand.Next(1, 3);
+            if (randomizer == 0)
+            {
+                lookFurther++;
+                int adjust = WorldGen.genRand.Next(1, 4);
+                if (adjust == 1)
+                {
+                    minerPos.X -= 16;
+                    PlaceWater();
+                    Dig();
+                }
+                else if (adjust == 2)
+                {
+                    minerPos.X += 16;
+                    PlaceWater();
+                    Dig();
+                }
+                else if (adjust == 3)
+                {
+                    minerPos.Y -= 16;
+                    PlaceWater();
+                    Dig();
+                }
+                else if (adjust == 4)
+                {
+                    minerPos.Y += 16;
+                    PlaceWater();
+                    Dig();
+                }
+                return;
+            }
+            if (randomizer == 1)
+            {
+                minerPos.X -= 16;
+                Dig();
+            }
+            if (randomizer == 2)
+            {
+                minerPos.Y -= 16;
+                Dig();
+            }
+            if (randomizer == 3)
+            {
+                minerPos.Y += 16;
+                Dig();
+            }
+            if (randomizer == 4)
+            {
+                minerPos.X += 16;
+                Dig();
+            }
+            GenerateNewMiner();
+            lookFurther = 0;
+        }
+        public void StiltedMove()    // stilted, might work if more iterations of movement, sometimes longest tunnel
+        {                                   // best water placer, there's another move that could be extracted from this if the ID segments were removed
+            moveID = 0;
+            if (Main.tileSolid[Main.tile[(int)(minerPos.X + 16 + (16 * lookFurther)) / 16, (int)minerPos.Y / 16].type])
+            {
+                moveID++;
+            }
+            if (Main.tileSolid[Main.tile[(int)(minerPos.X - 16 - (16 * lookFurther)) / 16, (int)minerPos.Y / 16].type])
+            {
+                moveID++;
+            }
+            if (Main.tileSolid[Main.tile[(int)minerPos.X / 16, (int)(minerPos.Y + 16 + (16 * lookFurther)) / 16].type])
+            {
+                moveID++;
+            }
+            if (Main.tileSolid[Main.tile[(int)minerPos.X / 16, (int)(minerPos.Y - 16 - (16 * lookFurther)) / 16].type])
+            {
+                moveID++;
+            }
+            int randomizer = WorldGen.genRand.Next(0, moveID);
+            size = WorldGen.genRand.Next(1, 3);
+            if (randomizer == 0)
+            {
+                lookFurther++;
+                int adjust = WorldGen.genRand.Next(1, 4);
+                if (adjust == 1)
+                {
+                    minerPos.X -= 16 * 2;
+                    PlaceWater();
+                }
+                else if (adjust == 2)
+                {
+                    minerPos.X += 16 * 2;
+                    PlaceWater();
+                }
+                else if (adjust == 3)
+                {
+                    minerPos.Y -= 16 * 2;
+                    PlaceWater();
+                }
+                else if (adjust == 4)
+                {
+                    minerPos.Y += 16 * 2;
+                    PlaceWater();
+                }
+                return;
+            }
+            if (randomizer == 1 && WorldGen.genRand.Next(6) == 2)
+            {
+                minerPos.X -= 16;
+                Dig();
+            }
+            if (randomizer == 2 && WorldGen.genRand.Next(10) == 4)
+            {
+                minerPos.Y -= 16;
+                Dig();
+            }
+            if (randomizer == 3)
+            {
+                minerPos.Y += 16;
+                Dig();
+            }
+            if (randomizer == 4 && WorldGen.genRand.Next(5) == 4)
+            {
+                minerPos.X += 16;
+                Dig();
+            }
+            GenerateNewMiner();
+            lookFurther = 0;
+        }
+        public void GenerateNewMiner()
+        {
+            int randomizer = WorldGen.genRand.Next(0, 100);
+            if (randomizer < 20 && whoAmI < 800)
+            {
+                //  Codable.RunGlobalMethod("ModWorld", "miner.Init", new object[] { 0 });
+                //  progressText = "Miner " + whoAmI + " created";
+                whoAmI++;
+
+                //  unecessary, jobCount takes care of new mining tasks
+                //  miner.whoAmI = whoAmI;
+                /*  int newMiner = NewMiner(minerPos.X, minerPos.Y, 0, whoAmI);
+                    ID[newMiner].init = false;
+                    ID[newMiner].Dig(); */
+                //  miner.ID[newID].minerPos = Miner.minerPos;
+            }
+        }
+        public void Dig()
+        {
+            if (type < 800 * 800)
+            {
+                type++;
+                minePath[type] = minerPos;
+            }
+
+            if (!switchMode)
+            {
+                for (int k = 2; k < 24; k++)
+                {
+                    int i = (int)minerPos.X / 16;
+                    int j = (int)minerPos.Y / 16;
+                    Tile[] tiles = new Tile[]
+                    {
+                        Main.tile[i + k, j + k],
+                        Main.tile[i - k, j - k],
+                        Main.tile[i + k, j - k],
+                        Main.tile[i - k, j + k]
+                    };
+                    foreach (Tile tile in tiles)
+                    {
+                        tile.type = ArchaeaWorld.magnoStone;
+                        tile.active(true);
+                    }
+                    WorldGen.KillWall((int)minerPos.X / 16 + k, (int)minerPos.Y / 16 + k, false);
+                    WorldGen.KillWall((int)minerPos.X / 16 - k, (int)minerPos.Y / 16 - k, false);
+                    WorldGen.KillWall((int)minerPos.X / 16 + k, (int)minerPos.Y / 16 - k, false);
+                    WorldGen.KillWall((int)minerPos.X / 16 - k, (int)minerPos.Y / 16 + k, false);
+                }
+            }
+            if (switchMode)
+            {
+                for (int k = 0; k < type; k++)
+                {
+                    minerPos = minePath[k];
+                    if (WorldGen.genRand.Next(60) == 0) PlaceWater();
+                    if (size == 1)
+                    {
+                        int i = (int)minerPos.X / 16;
+                        int j = (int)minerPos.Y / 16;
+                        Tile[] tiles = new Tile[]
+                        {
+                            Main.tile[i + circumference, j + circumference],
+                            Main.tile[i + circumference, j],
+                            Main.tile[i, j + circumference],
+                            Main.tile[i, j],
+                            Main.tile[i + 1, j],
+                            Main.tile[i - 1, j],
+                            Main.tile[i, j + 1],
+                            Main.tile[i, j - 1]
+                        };
+                        foreach (Tile tile in tiles)
+                        {
+                            tile.type = 0;
+                            tile.active(false);
+                        }
+                    }
+                    else if (size == 2)
+                    {
+                        Main.tile[(int)(minerPos.X / 16) + circumference, (int)(minerPos.Y / 16) + circumference].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + circumference, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + circumference].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + circumference * 2, (int)(minerPos.Y / 16) + circumference * 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + circumference * 2, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + circumference * 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 1, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 1, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) - 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 1, (int)(minerPos.Y / 16) + 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 1, (int)(minerPos.Y / 16) - 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 1, (int)(minerPos.Y / 16) - 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 1, (int)(minerPos.Y / 16) + 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 2, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 2, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) - 2].active(false);
+                    }
+                    else if (size == 3)
+                    {
+                        Main.tile[(int)(minerPos.X / 16) + circumference, (int)(minerPos.Y / 16) + circumference].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + circumference, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + circumference].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + circumference * 2, (int)(minerPos.Y / 16) + circumference * 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + circumference * 2, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + circumference * 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + circumference * 3, (int)(minerPos.Y / 16) + circumference * 3].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + circumference * 3, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + circumference * 3].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 1, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 1, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) - 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 1, (int)(minerPos.Y / 16) + 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 1, (int)(minerPos.Y / 16) - 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 1, (int)(minerPos.Y / 16) - 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 1, (int)(minerPos.Y / 16) + 1].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 2, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 2, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) - 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 2, (int)(minerPos.Y / 16) + 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 2, (int)(minerPos.Y / 16) - 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 2, (int)(minerPos.Y / 16) - 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 2, (int)(minerPos.Y / 16) + 2].active(false);
+                        Main.tile[(int)(minerPos.X / 16) + 3, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16) - 3, (int)(minerPos.Y / 16)].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + 3].active(false);
+                        Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) - 3].active(false);
+                    }
+                }
+            }
+        }
+        public void PlaceWater()
+        {
+            int randomizer = WorldGen.genRand.Next(0, 100);
+            if (randomizer < 8)
+            { // old randomizer%12 == 0
+                Main.tile[(int)(minerPos.X / 16) + circumference, (int)(minerPos.Y / 16)].liquid = 255;
+                Main.tile[(int)(minerPos.X / 16), (int)(minerPos.Y / 16) + circumference].liquid = 255;
+                WorldGen.SquareTileFrame((int)(minerPos.X / 16), (int)(minerPos.Y / 16));
+            }
+            if (circumference != 1) return;
+        }
+        public void Mine()
+        {
+            //	AverageMove();
+            DirectionalMove();
+            //	ToTheSurfaceMove();
+            //	StiltedMove();
+            //  used only in the removal of newly generated miners
+            /*          if(russianRoulette){
+                            int life = -5;
+                            int death = 60;
+                            int roulette = WorldGen.genRand.Next(life, death);
+                            if(roulette == death && whoAmI > 0){
+                                ID[whoAmI] = null;
+                                whoAmI++;
+                            }
+                        }   */
+            if (!switchMode && minerPos != Vector2.Zero && jobCount < jobCountMax/* && (minerPos.X < edge * 16 && minerPos.X > (rightBounds - edge) * 16 && minerPos.Y < edge * 16 && minerPos.Y > (bottomBounds - edge) * 16)*/)
+            {
+                int RandomX = WorldGen.genRand.Next(-2, 2);
+                int RandomY = WorldGen.genRand.Next(-2, 2);
+                if (RandomX != 0 && RandomY != 0)
+                {
+                    if (minerPos.Y / 16 > Main.maxTilesY / 3 && minerPos.Y < bottomBounds - edge)
+                    {
+                        mineBlock = new Vector2(mineBlockX * RandomX, mineBlockY * RandomY);
+                        minerPos += mineBlock;
+                    }
+                    if (minerPos.Y / 16 < Main.maxTilesY / 3)
+                    {
+                        minerPos.Y += mineBlockY;
+                    }
+                    if (minerPos.Y / 16 > bottomBounds - edge)
+                    {
+                        minerPos.Y -= mineBlockY;
+                    }
+                }
+                else return;
+            }
+        }
+        public void Randomizer()
+        {
+            randomX = WorldGen.genRand.Next(edge, rightBounds - edge);
+            randomY = WorldGen.genRand.Next((int)Main.rockLayer, bottomBounds - edge);
+            for (int j = -1; j < 1; j++)
+            {
+                circumference = j;
+            }
+        }
+        public void Terminate()
+        {
+            jobCount = jobCountMax;
+            whoAmI = 800;
+            ArchaeaWorld.miner.active = false;
+        }
+        public void Reset()
+        {
+            progressText = "";
+            type = 0;
+            whoAmI = 0;
+            jobCount = 0;
+            switchMode = false;
+            init = false;
+            center = new Vector2((Main.maxTilesX / 2) * 16, (Main.maxTilesY / 2) * 16);
+            minerPos = center;
+            oldMinerPos = default(Vector2);
+            genPos[0] = default(Vector2);
+            genPos[1] = default(Vector2);
+            for (int i = 0; i < minePath.Length - 1; i++)
+            {
+                minePath[i] = default(Vector2);
+            }
+            if (Main.maxTilesX == 4200)
+                jobCountMax = 32;
+            if (Main.maxTilesX == 6400)
+                jobCountMax = 48;
+            if (Main.maxTilesX == 8400)
+                jobCountMax = 64;
         }
     }
 }

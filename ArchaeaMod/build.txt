@@ -1,9 +1,9 @@
 author = 
-version = 0.1.9.30
+version = 0.2.1.10
 displayName = Archaea Mod
 homepage = 
 hideCode = true
 hideResources = true
 includeSource = false
-buildIgnore = *.csproj, *.user, obj\*, bin\*, .vs\*, *.ini, ArchaeaMod\*
+buildIgnore = *.csproj, *.user, obj\*, bin\*, .vs\*, *.ini, ArchaeaMod\*, archive\*, Transfer\*
 includePDB = false
