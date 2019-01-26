@@ -2,6 +2,7 @@
 using System;
 using Terraria;
 using Terraria.ID;
+using Terraria.ModLoader;
 
 namespace ArchaeaMod.NPCs.Bosses
 {
@@ -74,6 +75,7 @@ namespace ArchaeaMod.NPCs.Bosses
             attack = new Attack(Projectile.NewProjectileDirect(npc.Center, Vector2.Zero, ProjectileID.Fireball, 20, 4f));
             attack.proj.tileCollide = false;
             attack.proj.ignoreWater = true;
+            max = Math.Max(8 / npc.life, 3);
             projCenter = new Vector2[max];
             projs = new Attack[max][];
             for (int i = 0; i < projs.GetLength(0); i++)
@@ -102,6 +104,10 @@ namespace ArchaeaMod.NPCs.Bosses
             start = false;
             index = 0;
             return true;
+        }
+        public override void BossHeadSlot(ref int index)
+        {
+            index = NPCHeadLoader.GetBossHeadSlot(ArchaeaMod.magnoHead);
         }
     }
 
