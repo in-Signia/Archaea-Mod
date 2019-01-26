@@ -9,6 +9,11 @@ namespace ArchaeaMod
         {
             get { return ModLoader.GetMod("ArchaeaMod"); }
         }
+        public static string magnoHead = "ArchaeaMod/Gores/magno_head";
+        public override void Load()
+        {
+            AddBossHeadTexture(magnoHead, ModNPCID.MagnoliacHead);
+        }
         public void SetModInfo(out string name, ref ModProperties properties)
         {
             name = "Archaea Mod";

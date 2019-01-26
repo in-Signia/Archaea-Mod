@@ -96,7 +96,10 @@ namespace ArchaeaMod
                     for (int k = 0; k < (int)((4200 * 1200) * 6E-05); k++)
                     {
                         //  WorldGen.TileRunner(WorldGen.genRand.Next((int)(genPosition[0].X / 16) - miner.edge / 2, (int)(genPosition[1].X / 16) + miner.edge / 2), WorldGen.genRand.Next((int)genPosition[0].Y / 16 - miner.edge / 2, (int)genPosition[1].Y / 16 + miner.edge / 2), WorldGen.genRand.Next(15, 18), WorldGen.genRand.Next(2, 6), magnoDirt, false, 0f, 0f, false, true);
-                        WorldGen.TileRunner(WorldGen.genRand.Next((int)(genPosition[0].X / 16) - miner.edge / 2, (int)(genPosition[1].X / 16) + miner.edge / 2), WorldGen.genRand.Next((int)genPosition[0].Y / 16 - miner.edge / 2, (int)genPosition[1].Y / 16 + miner.edge / 2), WorldGen.genRand.Next(9, 12), WorldGen.genRand.Next(2, 6), magnoOre, false, 0f, 0f, false, true);
+                        int randX = WorldGen.genRand.Next((int)(genPosition[0].X / 16) - miner.edge / 2, (int)(genPosition[1].X / 16) + miner.edge / 2);
+                        int randY = WorldGen.genRand.Next((int)genPosition[0].Y / 16 - miner.edge / 2, (int)genPosition[1].Y / 16 + miner.edge / 2);
+                        if (Main.tile[randX, randY].type == magnoStone)
+                            WorldGen.TileRunner(randX, randY, WorldGen.genRand.Next(9, 12), WorldGen.genRand.Next(2, 6), magnoOre, false, 0f, 0f, false, true);
                         progress.Value = k / (float)((4200 * 1200) * 6E-05);
                     }
                     progress.End();
@@ -112,9 +115,9 @@ namespace ArchaeaMod
                     Vector2 position;
                     do
                     {
-                        position = new Vector2(WorldGen.genRand.Next(200, Main.maxTilesX - 200), 200);
+                        position = new Vector2(WorldGen.genRand.Next(200, Main.maxTilesX - 200), 125);
                     } while (position.X < Main.spawnTileX + 150 && position.X > Main.spawnTileX - 150);
-                    var s = new Structures(new Vector2(2025, 200));
+                    var s = new Structures(position);
                     s.Initialize();
                     s.SkyRoom(true);
                     progress.Value = 1f;
@@ -129,12 +132,16 @@ namespace ArchaeaMod
                     progress.Start(1f);
                     progress.Message = "Magno extras";
                     t = new Treasures();
+                    int place = 0;
                     int width = Main.maxTilesX - 100;
                     int height = Main.maxTilesY - 100;
+                    Vector2[] ceilings = Treasures.GetCeiling(new Vector2(100, 100), width, height, false, magnoStone);
                     Vector2[] walls = Treasures.GetWall(100, 100, (int)(Main.rightWorld / 16f) - 100, (int)(Main.bottomWorld / 16f) - 200, new ushort[] { magnoStone });
                     Vector2[] floors = Treasures.GetFloor(new Vector2(100, 100), width, height, false, new ushort[] { magnoStone });
+                    foreach (Vector2 ceiling in ceilings)
+                        t.PlaceTile((int)ceiling.X, (int)ceiling.Y, crystal, false, false, 8);
                     foreach (Vector2 wall in walls)
-                        t.PlaceTile((int)wall.X, (int)wall.Y, crystal, false, false, 6);
+                        t.PlaceTile((int)wall.X, (int)wall.Y, crystal, false, false, 8);
                     foreach (Vector2 floor in floors)
                         if (floor != Vector2.Zero)
                         {
@@ -142,7 +149,8 @@ namespace ArchaeaMod
                             int j = (int)floor.Y;
                             if (!Main.tile[i + 1, j].active())
                             {
-                                if (WorldGen.genRand.Next(4) == 0)
+                                place++;
+                                if (place % 3 == 0)
                                     t.PlaceTile(i, j, crystal2x2, true, false, 8);
                                 else t.PlaceTile(i, j, crystal2x1, true, false, 8);
                             }
@@ -155,8 +163,9 @@ namespace ArchaeaMod
             int index4 = tasks.FindIndex(pass => pass.Name.Equals("Pyramids"));
             if (index4 != -1)
             {
-                tasks.Insert(index4, new PassLegacy("Mod Generation", delegate (GenerationProgress progress)
+                tasks.Insert(index4, new PassLegacy("Sorting Floating Tiles", delegate (GenerationProgress progress)
                 {
+                    progress.Message = "Magno Sorting";
                     for (int j = 100; j < Main.maxTilesY - 250; j++)
                         for (int i = 100; i < Main.maxTilesX - 100; i++)
                         {
@@ -189,7 +198,9 @@ namespace ArchaeaMod
             {
                 progress.Start(1f);
                 progress.Message = "More Magno";
-                var s = new Structures.Magno();
+                var m = new Structures.Magno();
+                m.tileID = magnoBrick;
+                m.wallID = magnoBrickWall;
                 Vector2 origin = new Vector2(100, 100);
                 Vector2[] regions = Treasures.GetRegion(origin, Main.maxTilesX - 100, Main.maxTilesY - 250, false, true, new ushort[] { magnoStone });
                 int count = 0;
@@ -197,8 +208,8 @@ namespace ArchaeaMod
                 int max = WorldGen.genRand.Next(5, 8);
                 for (int i = 0; i < max; i++)
                 {
-                    s.Initialize();
-                    while (!s.MagnoHouse(regions[WorldGen.genRand.Next(regions.Length)]))
+                    m.Initialize();
+                    while (!m.MagnoHouse(regions[WorldGen.genRand.Next(regions.Length)]))
                     {
                         if (count < total)
                             count++;
@@ -227,21 +238,34 @@ namespace ArchaeaMod
             #endregion
         }
 
+        public bool MagnoBiome;
+        public bool SkyFort;
+        public override void TileCountsAvailable(int[] tileCounts)
+        {
+            MagnoBiome = tileCounts[magnoStone] >= 50;
+            SkyFort = tileCounts[TileID.Dirt] >= 20;
+        }
         private bool begin;
         private bool q;
         public override void PreUpdate()
         {
+            //Structures.Magno s = null;
             if (ArchaeaPlayer.KeyPress(Keys.Q))
             {
                 if (!begin)
                 {
-                    //  s = new Structures(new Vector2(Main.spawnTileX, Main.spawnTileY - 80));
-                    //  t = new Treasures();
+                    //s = new Structures.Magno();
+                    //t = new Treasures();
                     begin = true;
                 }
-                //var s = new Structures(new Vector2(Main.spawnTileX, Main.spawnTileY - 50));
+                //s.Initialize();
+                //s.MagnoHouse(new Vector2(Main.spawnTileX, Main.spawnTileY));
+                //var s = new Structures();
                 //s.Initialize();
                 //s.SkyRoom(true);
+                //int i = Main.spawnTileX;
+                //int j = 20;
+                //s.CloudForm(i, j);
             }
         }
         public static bool Inbounds(int i, int j)
@@ -446,6 +470,22 @@ namespace ArchaeaMod
                 }
             return tiles;
         }
+        public static Vector2[] GetCeiling(Vector2 region, int width, int height, bool overflow = false, ushort tileType = 0)
+        {
+            var tiles = new List<Vector2>();
+            for (int i = (int)region.X; i < width; i++)
+                for (int j = (int)region.Y; j < height; j++)
+                {
+                    if (!ArchaeaWorld.Inbounds(i, j)) continue;
+                    if (overflow & WorldGen.genRand.Next(5) == 0) continue;
+                    Tile roof = Main.tile[i, j];
+                    Tile ceiling = Main.tile[i, j + 1];
+                    if (ceiling.active() && Main.tileSolid[ceiling.type]) continue;
+                    if (roof.active() && Main.tileSolid[roof.type] && roof.type == tileType)
+                        tiles.Add(new Vector2(i, j + 1));
+                }
+            return tiles.ToArray();
+        }
         public static Vector2[] GetRegion(Vector2 region, int width, int height, bool overflow = false, bool attach = false, ushort[] tileTypes = null)
         {
             int index = width * height * tileTypes.Length;
@@ -555,8 +595,8 @@ namespace ArchaeaMod
         private int max = 3;
         public int[][,] house;
         public int[][,] rooms;
-        private ushort tileID;
-        private ushort wallID;
+        public ushort tileID;
+        public ushort wallID;
         private ushort[] decoration = new ushort[] { TileID.Statues, TileID.Pots };
         private ushort[] furniture = new ushort[] { TileID.Tables, TileID.Chairs, TileID.Pianos, TileID.GrandfatherClocks, TileID.Dressers };
         private ushort[] useful = new ushort[] { TileID.Loom, TileID.SharpeningStation, TileID.Anvils, TileID.CookingPots };
@@ -626,12 +666,6 @@ namespace ArchaeaMod
                 switch (k)
                 {
                     case -3:
-                        for (int i = -3; i <= 3; i++)
-                        {
-                            x = (int)origin.X + 15 * i;
-                            y = (int)origin.Y;
-                            CloudForm(x, y, 20);
-                        }
                         break;
                     case -2:
                         RoomItems(index, k);
@@ -747,28 +781,23 @@ namespace ArchaeaMod
                 }
             }
         }
-        public void CloudForm(int i, int j, float width = 30, int odds = 10)
+        public void CloudForm(int i, int j)
         {
-            Vector2 origin = new Vector2(i, j);
-            float radian = (float)Math.PI / 180f;
-            float degrees = 0f;
-            for (degrees = 0f; degrees < Math.PI * 2d; degrees += radian)
-            {
-                for (int r = 0; r < width; r++)
+            int width = 90;
+            var d = new Draw();
+            for (int m = 0; m < width; m++)
+                for (int n = 0; n < width / 2; n++)
                 {
-                    int cos = (int)(origin.X + (r * Math.Cos(degrees)));
-                    int sine = (int)(origin.Y + (r / 2 * Math.Sin(degrees)));
-                    ushort tileType = TileID.Cloud;
-                    if (r >= 0.75f && WorldGen.genRand.Next(odds) == 0)
-                        WorldGen.PlaceTile(cos, sine, TileID.Cloud, true, true);
-                    cos = (int)(origin.X + (r * 1.5f * Math.Cos(degrees)));
-                    sine = (int)(origin.Y + (r / 1.5f * Math.Sin(degrees)));
-                    if (r <= width * 0.34f)
-                        WorldGen.PlaceTile(cos, sine, tileType, true, true);
-                    if (r > width * 0.34f && r < width * 0.75f)
-                        WorldGen.PlaceTile(cos, sine, tileType, true, true);
+                    if (WorldGen.genRand.Next(25) == 0)
+                        for (float k = 0; k < 12; k += 12 * Draw.radian)
+                            for (float r = 0f; r < Math.PI * 2f; r += d.radians(k))
+                            {
+                                int cos = (int)(i + m + k * Math.Cos(r));
+                                int sine = (int)(j + n + k / 2f * Math.Sin(r));
+                                Main.tile[cos, sine].active(true);
+                                Main.tile[cos, sine].type = TileID.Cloud;
+                            }
                 }
-            }
         }
         public void RoomItems(int k, int index = 0, int roomX = 15, int roomY = 9, bool genWalls = false)
         {
@@ -943,6 +972,7 @@ namespace ArchaeaMod
         {
             int m;
             int n;
+            int w = 0;
             for (int k = 0; k < max; k++)
             {
                 int width = house[0].GetLength(0);
