@@ -16,7 +16,7 @@ namespace ArchaeaMod
     {
         protected static Mod getMod
         {
-            get { return ModLoader.GetMod("ArchaeaMod_Debug"); }
+            get { return ModLoader.GetMod("ArchaeaMod"); }
         }
         public static int ItchySlime
         {
@@ -81,6 +81,16 @@ namespace ArchaeaMod.NPCs
     {
         public override void EditSpawnPool(IDictionary<int, float> pool, NPCSpawnInfo spawnInfo)
         {
+            bool MagnoBiome = spawnInfo.player.GetModPlayer<ArchaeaPlayer>(mod).MagnoBiome;
+            bool MagnoBossDefeated = false;
+            pool.Add(ModNPCID.Fanatic,          MagnoBiome ? 0.25f : 0f);
+            pool.Add(ModNPCID.Hatchling,        MagnoBiome ? 0.2f : 0f);
+            pool.Add(ModNPCID.ItchySlime,       MagnoBiome ? 0.4f : 0f);
+            pool.Add(ModNPCID.MercurialSlime,   MagnoBiome && MagnoBossDefeated ? 0.4f : 0f);
+            pool.Add(ModNPCID.Mimic,            MagnoBiome && Main.hardMode ? 0.15f : 0f);
+            bool SkyFort = spawnInfo.player.GetModPlayer<ArchaeaPlayer>(mod).SkyFort;
+            pool.Add(ModNPCID.Observer,         SkyFort ? 0.4f : 0f);
+            pool.Add(ModNPCID.Marauder,         SkyFort ? 0.6f : 0f);
         }
         public override bool CheckActive(NPC npc)
         {
@@ -89,7 +99,7 @@ namespace ArchaeaMod.NPCs
             return base.CheckActive(npc);
         }
     }
-    public class ArchaeaNPC
+    public class ArchaeaNPC : GlobalNPC
     {
         public static int defaultWidth = 800;
         public static int defaultHeight = 600;
@@ -118,7 +128,7 @@ namespace ArchaeaMod.NPCs
             if (target == null)
                 return false;
             vector = FindGround(npc, new Rectangle((int)target.position.X - width / 2, (int)target.position.Y - height / 2, width, height));
-            if (!MagnoDen.Inbounds((int)vector.X / 16, (int)vector.Y / 16))
+            if (!ArchaeaWorld.Inbounds((int)vector.X / 16, (int)vector.Y / 16))
                 return false;
             if (vector != Vector2.Zero)
                 npc.position = vector;
@@ -133,7 +143,7 @@ namespace ArchaeaMod.NPCs
             {
                 int i = (int)vector.X / 16;
                 int j = (int)(vector.Y + npc.height + 8) / 16;
-                if (!MagnoDen.Inbounds(i, j))
+                if (!ArchaeaWorld.Inbounds(i, j))
                     continue;
                 int count = 0;
                 int max = npc.width / 16;
@@ -159,7 +169,7 @@ namespace ArchaeaMod.NPCs
             {
                 int i = (int)vector.X / 16;
                 int j = (int)(vector.Y + player.height + 8) / 16;
-                if (!MagnoDen.Inbounds(i, j))
+                if (!ArchaeaWorld.Inbounds(i, j))
                     continue;
                 int count = 0;
                 int max = player.width / 16;
@@ -266,13 +276,13 @@ namespace ArchaeaMod.NPCs
         {
             return (float)Math.Atan2(to.Y - from.Y, to.X - from.X);
         }
-        public static Dust[] DustSpread(Vector2 v, int dustType = 6, int total = 10, float scale = 1f)
+        public static Dust[] DustSpread(Vector2 v, int width = 1, int height = 1, int dustType = 6, int total = 10, float scale = 1f)
         {
             Dust[] dusts = new Dust[total];
             for (int k = 0; k < total; k++)
             {
                 Vector2 speed = ArchaeaNPC.AngleToSpeed(ArchaeaNPC.RandAngle(), 8f);
-                dusts[k] = Dust.NewDustDirect(v + speed, 1, 1, dustType, speed.X, speed.Y, 0, default(Color), 2f);
+                dusts[k] = Dust.NewDustDirect(v + speed, width, height, dustType, speed.X, speed.Y, 0, default(Color), 2f);
             }
             return dusts;
         }
@@ -286,7 +296,26 @@ namespace ArchaeaMod.NPCs
             newLife = life;
             return false;
         }
-        
+        public static void RotateIncrement(bool direction, ref float from, float to, float speed, out float result)
+        {
+            if (!direction)
+            {
+                if (from > to * -1)
+                    from -= speed;
+                if (from < to * -1)
+                    from -= speed;
+            }
+            else
+            {
+                if (from > to)
+                    from -= speed;
+                if (from < to)
+                    from += speed;
+            }
+            result = from;
+        }
+
+
         public static void PositionToVel(NPC npc, Vector2 change, float speedX, float speedY, bool clamp = false, float min = -2.5f, float max = 2.5f, bool wobble = false, double degree = 0f)
         {
             float cos = wobble ? (float)(0.05f * Math.Cos(degree)) : 0f;
@@ -314,30 +343,18 @@ namespace ArchaeaMod.NPCs
             Vector2 _max = new Vector2(max, max);
             Vector2.Clamp(ref proj.velocity, ref _min, ref _max, out proj.velocity);
         }
+        public static void VelocityClamp(Vector2 velocity, float min, float max)
+        {
+            Vector2 _min = new Vector2(min, min);
+            Vector2 _max = new Vector2(max, max);
+            Vector2.Clamp(ref velocity, ref _min, ref _max, out velocity);
+        }
         public static void VelClampX(NPC npc, float min, float max)
         {
             if (npc.velocity.X < min)
                 npc.velocity.X = min;
             if (npc.velocity.X > max)
                 npc.velocity.X = max;
-        }
-        public static void RotateIncrement(bool direction, ref float from, float to, float speed, out float result)
-        {
-            if (!direction)
-            {
-                if (from >= to * -1)
-                    from -= speed;
-                if (from <= to * -1)
-                    from += speed;
-            }
-            else
-            {
-                if (from >= to)
-                    from -= speed;
-                if (from <= to)
-                    from += speed;
-            }
-            result = from;
         }
 
         protected static bool SolidGround(Tile[] tiles)
@@ -377,14 +394,14 @@ namespace ArchaeaMod.NPCs
         }
         for (int i = check.Left; i < check.Right; i++)
             for (int j = check.Left; j < check.Right; i++)
-                if (!WithinRange(new Vector2(i, j), screen) && MagnoDen.Inbounds(i, j))
+                if (!WithinRange(new Vector2(i, j), screen) && ArchaeaWorld.Inbounds(i, j))
                     vectors.Add(new Vector2(i, j));
         if (vectors.Count > 0)
             return vectors.ToArray();
         return new Vector2[] { Vector2.Zero };*/
         #endregion
         #region depracated
-        /*if (!MagnoDen.Inbounds(x, y))
+        /*if (!ArchaeaWorld.Inbounds(x, y))
         {
             npc.active = false;
             return Vector2.Zero;
@@ -396,7 +413,7 @@ namespace ArchaeaMod.NPCs
             {
                 int i = (x + k) / 16;
                 int j = (y + l - npc.height) / 16;
-                if (!MagnoDen.Inbounds(i, j))
+                if (!ArchaeaWorld.Inbounds(i, j))
                     continue;
                 Tile tile = Main.tile[i, j];
                 if (NotActiveOrSolid(tile))

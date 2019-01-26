@@ -27,12 +27,6 @@ namespace ArchaeaMod.NPCs
         }
         public override void SetDefaults()
         {
-            npc.width = 32;
-            npc.height = 32;
-            npc.lifeMax = 50;
-            npc.defense = 10;
-            npc.damage = 10;
-            npc.value = 0;
             npc.lavaImmune = true;
             npc.noTileCollide = true;
             npc.noGravity = true;
@@ -41,6 +35,10 @@ namespace ArchaeaMod.NPCs
 
         private bool begin;
         public bool direction;
+        private bool hyper
+        {
+            get { return npc.life < npc.lifeMax / 3.5f; }
+        }
         public virtual bool moveThroughAir
         {
             get { return true; }
@@ -60,7 +58,7 @@ namespace ArchaeaMod.NPCs
         {
             get { return 3f; }
         }
-        public float followSpeed
+        public virtual float followSpeed
         {
             get { return leadSpeed * 2f; }
         }
@@ -72,34 +70,40 @@ namespace ArchaeaMod.NPCs
         {
             get { return leadSpeed * 534f; }
         }
+        private float rotate;
         public Vector2 follow;
         public Rectangle bounds
         {
             get { return new Rectangle(-400, -300, 800, 600); }
         }
-        protected bool Initialize()
+        public virtual void Initialize()
         {
-            if (!begin)
-            {
-                body = new int[8];
-                body[0] = NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, bodyType, 0, npc.whoAmI);
-                for (int k = 1; k < body.Length - 1; k++)
-                    body[k] = NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, bodyType, 0, body[k - 1], npc.whoAmI);
-                body[7] = NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, tailType, 0, body[6], npc.whoAmI);
-                npc.ai[0] = Main.npc[body[7]].whoAmI;
-                for (int l = 0; l < body.Length; l++)
-                    NetMessage.SendData(MessageID.SyncNPC, -1, -1, null, body[l]);
-                follow = FindAny(bounds);
-                rotateTo = ArchaeaNPC.AngleTo(npc.Center, npc.Center + follow);
-                begin = true;
-            }
-            return begin;
+        }
+        protected void SpawnParts()
+        {
+            body = new int[totalParts];
+            body[0] = NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, bodyType, 0, npc.whoAmI);
+            for (int k = 1; k < body.Length - 1; k++)
+                body[k] = NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, bodyType, 0, body[k - 1], npc.whoAmI);
+            body[totalParts - 1] = NPC.NewNPC((int)npc.position.X, (int)npc.position.Y, tailType, 0, body[totalParts - 2], npc.whoAmI);
+            npc.ai[0] = Main.npc[body[totalParts - 1]].whoAmI;
+            for (int l = 0; l < body.Length; l++)
+                NetMessage.SendData(MessageID.SyncNPC, -1, -1, null, body[l]);
+            NextDirection(FindAny(bounds));
+            rotateTo = ArchaeaNPC.AngleTo(npc.Center, npc.Center + follow);
+            rotate = npc.rotation;
         }
         public override bool PreAI()
         {
-            Initialize();
+            if (!begin)
+            {
+                Initialize();
+                SpawnParts();
+                begin = true;
+            }
             direction = follow.X > npc.Center.X;
-            ArchaeaNPC.RotateIncrement(direction, ref npc.rotation, rotateTo, turnSpeed, out npc.rotation);
+            rotate = WrapAngle(ref rotate);
+            ArchaeaNPC.RotateIncrement(true, ref rotate, rotateTo, turnSpeed, out npc.rotation);
             if (PreMovement() && Vector2.Distance(follow, npc.Center) > npc.width * 1.2f)
             {
                 if (acc > 0.90f)
@@ -108,32 +112,12 @@ namespace ArchaeaMod.NPCs
                         acc -= 0.01f;
                     else acc += 0.025f;
                 }
-                npc.Center = npc.Center + ArchaeaNPC.AngleToSpeed(npc.rotation, leadSpeed / acc);
+                npc.Center += ArchaeaNPC.AngleToSpeed(npc.rotation, leadSpeed / acc);
             }
             PostMovement();
             return true;
         }
-        public bool inGround
-        {
-            get
-            {
-                int x = (int)npc.position.X;
-                int y = (int)npc.position.Y;
-                for (int n = y; n < y + npc.height; n++)
-                    for (int m = x; m < x + npc.width; m++)
-                    {
-                        int i = m / 16;
-                        int j = n / 16;
-                        if (!Inbounds(i, j))
-                            return false;
-                        Tile ground = Main.tile[i, j];
-                        if (ground.active() && Main.tileSolid[ground.type])
-                            return true;
-                    }
-                return false;
-            }
-        }
-        public bool InGround(Vector2 position)
+        public bool inGround(Vector2 position)
         {
             int i = (int)position.X / 16;
             int j = (int)position.Y / 16;
@@ -142,7 +126,7 @@ namespace ArchaeaMod.NPCs
             Tile ground = Main.tile[i, j];
             if (ground.active() && Main.tileSolid[ground.type])
                 return true;
-            return false;
+            else return false;
         }
         public bool inRange
         {
@@ -175,13 +159,11 @@ namespace ArchaeaMod.NPCs
             }
             else return Main.player[npc.target];
         }
+
         public override void AI()
         {
-            if (!Inbounds() || (!inGround && !moveThroughAir))
-            {
-                NextDirection(new Vector2(0, npc.height * -1));
-                return;
-            }
+            if (follow == default(Vector2))
+                follow = target().Center;
             switch (ai)
             {
                 case Reset:
@@ -195,7 +177,7 @@ namespace ArchaeaMod.NPCs
                     break;
                 case Idle:
                     ai = Idle;
-                    if (npc.Distance(target().position) < range || (time++ > interval / 4 && time != 0))
+                    if (npc.Distance(target().position) < range / 2f && time++ > interval / 4 && time != 0)
                     {
                         time = 0;
                         move = FindAny(bounds);
@@ -205,7 +187,9 @@ namespace ArchaeaMod.NPCs
                 case DigAround:
                     ai = DigAround;
                     Digging();
-                    if (time++ > interval / 2 && time != 0)
+                    if (LookForGround())
+                        return;
+                    if (time++ > interval && time != 0)
                     {
                         move = FindAny(bounds);
                         cycle++;
@@ -214,27 +198,22 @@ namespace ArchaeaMod.NPCs
                     if (npc.Hitbox.Contains(follow.ToPoint()))
                         move = FindAny(bounds);
                     if (move != Vector2.Zero)
-                    {
-                        follow = move;
-                        NextDirection(follow);
-                    }
+                        NextDirection(move);
                     if (cycle > 2)
                     {
                         cycle = 0;
-                        if (npc.Distance(target().position) < range)
-                            goto case ChasePlayer;
-                        else goto case Idle;
+                        goto case ChasePlayer;
                     }
                     break;
                 case ChasePlayer:
                     ai = ChasePlayer;
-                    if (!ArchaeaNPC.defaultBounds(target()).Contains(npc.Hitbox))
-                        rotateTo = direction ? ArchaeaNPC.AngleTo(npc, target()) : ArchaeaNPC.AngleTo(npc, target()) * -1;
+                    if (npc.Distance(target().Center) > 100f)
+                        rotateTo = npc.AngleTo(target().Center);
                     if (time++ % interval / 2 == 0 && time != 0)
                         cycle++;
-                    if (!InGround(npc.Center))
+                    if (!inGround(npc.Center))
                         leaps++;
-                    if (npc.Hitbox.Intersects(target().Hitbox) || cycle > 12 || leaps > 60)
+                    if (npc.Hitbox.Intersects(target().Hitbox) || cycle > 8 || (!moveThroughAir && leaps > 100))
                     {
                         ai = DigAround;
                         goto case Reset;
@@ -254,14 +233,34 @@ namespace ArchaeaMod.NPCs
         }
         protected void NextDirection(Vector2 chase)
         {
-            follow = chase;
-            rotateTo = ArchaeaNPC.AngleTo(npc.Center, npc.Center + follow);
+            follow = chase + npc.position;
+            rotateTo = ArchaeaNPC.AngleTo(npc.Center, follow);
         }
         protected Vector2 FindAny(Rectangle check)
         {
-            int x = Main.rand.Next(check.X, check.Right);
-            int y = Main.rand.Next(check.Y, check.Bottom);
+            int x = Main.rand.Next(check.Width * -1, check.Width);
+            int y = Main.rand.Next(check.Height * -1, check.Height);
             return new Vector2(x, y);
+        }
+        private bool inAir;
+        protected bool LookForGround()
+        {
+            if (!Inbounds() || (!inGround(npc.Center) && !moveThroughAir))
+            {
+                rotateTo = (float)Math.PI / 2f;
+                inAir = true;
+                return true;
+            }
+            else if (inAir)
+            {
+                NextDirection(FindAny(bounds));
+                inAir = false;
+            }
+            return false;
+        }
+        public bool Elapsed(int interval)
+        {
+            return Math.Round(Main.time, 0) % interval == 0;
         }
         internal bool Inbounds(int i, int j)
         {
@@ -273,7 +272,7 @@ namespace ArchaeaMod.NPCs
             int j = (int)npc.Center.Y / 16;
             return i < Main.maxTilesX - 30 && i > 500 / 16 && j < Main.maxTilesY - 30 && j > 500 / 16;
         }
-        protected static void Clamp(float input, float min, float max, out float result)
+        public static void Clamp(float input, float min, float max, out float result)
         {
             if (input < min)
                 input = min;
@@ -304,11 +303,19 @@ namespace ArchaeaMod.NPCs
             if (Vector2.Distance(part.Center, npc.Center) > npc.width * 1.2f)
             {
                 if (!npc.Hitbox.Contains(connect.ToPoint()))
-                    acc = 0.60f;
+                    acc = 0.30f;
                 else acc += 0.01f;
-                Clamp(acc, 0.6f, 1f, out acc);
+                Clamp(acc, 0.3f, 1f, out acc);
                 npc.Center += ArchaeaNPC.AngleToSpeed(npc.rotation, speed * acc);
             }
+        }
+        public float WrapAngle(ref float angle)
+        {
+            if (angle > Math.PI)
+                angle = (float)Math.PI;
+            if (angle < Math.PI * -1)
+                angle = (float)Math.PI * -1;
+            return angle;
         }
     }
 }

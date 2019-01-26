@@ -35,11 +35,15 @@ namespace ArchaeaMod.NPCs
         }
         public override bool moveThroughAir
         {
-            get { return false; }
+            get { return ai == 3; }
         }
         public override float leadSpeed
         {
             get { return 5.5f; }
+        }
+        public override float followSpeed
+        {
+            get { return leadSpeed * 4f; }
         }
         private Player newTarget
         {
